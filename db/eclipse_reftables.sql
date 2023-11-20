@@ -1,6 +1,6 @@
 
 -- Populate the SpatialReference table
-INSERT INTO SpatialReference (epsg_code, sr_name, description) VALUES
+INSERT INTO SpatialReference (epsg_code, proj_name, description) VALUES
   (4326, 'WGS 84', 'World Geodetic System 1984'),
   (3005, 'BC Albers (CSRS)', 'British Columbia Albers Equal Area Conic Projection'),
   (3153, 'BC Albers (CSRS)', 'British Columbia Albers Equal Area Conic Projection'),
