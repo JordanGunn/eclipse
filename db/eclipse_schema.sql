@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS NASBox (
   id SERIAL PRIMARY KEY,
   name VARCHAR(20) NOT NULL,
   location VARCHAR(255) NOT NULL,
-  capacity_gb NUMERIC(4, 2) NOT NULL,
   IPv4_addr VARCHAR(15) NOT NULL
 );
 
@@ -68,10 +67,10 @@ CREATE TABLE IF NOT EXISTS Lidar (
   file_name VARCHAR(255),
   file_path VARCHAR(255),
   file_size VARCHAR(255),
-  x_min NUMERIC(10, 3),
-  x_max NUMERIC(10, 3),
-  y_min NUMERIC(10, 3),
-  y_max NUMERIC(10, 3),
+  x_min REAL,
+  x_max REAL,
+  y_min REAL,
+  y_max REAL,
   lidar_type CHAR,
   version REAL,
   epsg_code INTEGER REFERENCES SpatialReference(epsg_code),
@@ -101,10 +100,10 @@ CREATE TABLE IF NOT EXISTS DerivedProduct (
   file_name VARCHAR(255),
   file_path VARCHAR(255),
   file_size VARCHAR(255),
-  x_min NUMERIC(10, 3),
-  x_max NUMERIC(10, 3),
-  y_min NUMERIC(10, 3),
-  y_max NUMERIC(10, 3),
+  x_min REAL,
+  x_max REAL,
+  y_min REAL,
+  y_max REAL,
   bounding_box POLYGON,
   epsg_code INTEGER REFERENCES SpatialReference(epsg_code),
   nas_id INTEGER REFERENCES NASBox(id)
@@ -114,8 +113,8 @@ CREATE TABLE IF NOT EXISTS DerivedProduct (
 CREATE TABLE IF NOT EXISTS Drive (
   id SERIAL PRIMARY KEY,
   serial_number VARCHAR(255) NOT NULL,
-  storage_total_gb NUMERIC(4, 2) NOT NULL,
-  storage_used_gb NUMERIC(4, 2) NOT NULL,
+  storage_total_gb REAL NOT NULL,
+  storage_used_gb REAL NOT NULL,
   file_count INTEGER,
   nas_id INTEGER REFERENCES NASBox(id),
   delivery_id INTEGER REFERENCES Delivery(id)
