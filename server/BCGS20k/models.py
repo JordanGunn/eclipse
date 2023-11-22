@@ -1,11 +1,12 @@
 from django.db import models
-from django.contrib.gis.db import models as gisModels
+from django.contrib.gis.db import models as gismodels
+
 
 # Create your models here.
 class BCGS20k(models.Model):
 
     tile_20k = models.CharField(max_length=32, blank=True, primary_key=True)
-    geometry = gisModels.MultiPolygonField(geography=True, blank=True, null=True)
+    geometry = gismodels.MultiPolygonField(geography=True, blank=True, null=True)
     priority = models.BooleanField(blank=True, null=True)
 
     class Meta:
