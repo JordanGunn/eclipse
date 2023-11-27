@@ -1,10 +1,11 @@
 # Delivery/serializers.py
-from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from rest_framework import serializers
 from .models import Delivery
 
 
-class DeliverySerializer(GeoFeatureModelSerializer):
+class DeliverySerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Delivery
-        geo_field = 'coverage'
-        fields = '__all__'
+        fields = ['receiver_name', 'comments', 'timestamp']
+        read_only_fields = ['timestamp']
