@@ -178,7 +178,9 @@ class Drive(object):
             "nas_id": self.nas_id,
             "delivery_id": self.delivery_id
         }
-        return json.dumps(drive_data, indent=4)
+
+        json_data = json.dumps(drive_data, indent=4)
+        return json_data
 
 
 def main():
