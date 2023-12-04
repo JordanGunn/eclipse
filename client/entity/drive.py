@@ -1,48 +1,61 @@
+# system imports
 import os
-import json
 import shutil
 import psutil
-import platform
+from typing import Union
+
+# system-specific imports
+try:
+    import win32api  # windows os
+except ImportError:
+    win32api = None
+
+try:
+    import pyudev  # windows os
+except ImportError:
+    pyudev = None
+
+# user imports
+import entity_name
+from .entity import Entity
 
 
-# check the native OS
-IS_WINDOWS = (platform.system().lower() == "windows")
-if IS_WINDOWS:
-    import win32api
-else:
-    import pyudev
+# =====================================================================
 
 
-class Drive(object):
+class Drive(Entity):
 
     def __init__(self, nas_id: int, delivery_id: int):
 
-        self._file_count = -1
-        self._drive_path = ""
-        self._serial_number = ""
-        self._storage_total_gb = float("nan")
-        self._storage_used_gb = float("nan")
+        super().__init__()
+        Entity.name = entity_name.DRIVE
 
-        self._nas_id = nas_id
-        self._delivery_id = delivery_id
+        self.file_count_ = -1
+        self.drive_path_ = ""
+        self.serial_number_ = ""
+        self.storage_total_gb_ = float("nan")
+        self.storage_used_gb_ = float("nan")
 
-    # -- DRIVE
+        self.nas_id_ = nas_id
+        self.delivery_id_ = delivery_id
+
+    # -- DRIVE_PATH
     @property
     def drive_path(self):
-        return self._drive_path
+        return self.drive_path_
 
     @drive_path.setter
     def drive_path(self, drive_path: str):
 
         if self._is_external_drive(drive_path):
-            self._drive_path = drive_path
+            self.drive_path_ = drive_path
         else:
-            self._drive_path = None
+            self.drive_path_ = None
 
     # -- SERIAL_NUMBER
     @property
     def serial_number(self):
-        return self._serial_number
+        return self.serial_number_
 
     @serial_number.setter
     def serial_number(self, serial_number: str = ""):
@@ -57,85 +70,96 @@ class Drive(object):
 
         # if passed directly
         if serial_number:
-            self._serial_number = serial_number
+            self.serial_number_ = serial_number
 
         # otherwise, get the serial number from the drive letter
         else:
-            dp = self._drive_path
+            dp = self.drive_path_
             if not dp:
-                self._serial_number = ""
+                self.serial_number_ = ""
 
             sn_func = self._serial_number_win \
-                if IS_WINDOWS else self._serial_number_linux
+                if win32api else self._serial_number_linux
 
-            self._serial_number = sn_func(dp)
+            self.serial_number_ = sn_func(dp)
 
     # -- NAS_ID
     @property
     def nas_id(self):
-        return self._nas_id
+        return self.nas_id_
 
     @nas_id.setter
-    def nas_id(self, nas_id):
-        self._nas_id = nas_id
+    def nas_id(self, nas_id: Union[int, str]):
+        if isinstance(nas_id, int):
+            self.nas_id_ = nas_id
+        elif isinstance(nas_id, str) and nas_id.isnumeric():
+            self.nas_id_ = int(nas_id)
+        else:
+            raise ValueError(f"Invalid: '{nas_id}'. Argument 'nas_id' must be an integer.")
 
     # -- DELIVERY_ID
     @property
     def delivery_id(self):
-        return self._delivery_id
+        return self.delivery_id_
 
     @delivery_id.setter
-    def delivery_id(self, delivery_id):
-        self._delivery_id = delivery_id
+    def delivery_id(self, delivery_id: Union[int, str]):
+        if isinstance(delivery_id, int):
+            self.nas_id_ = delivery_id
+        elif isinstance(delivery_id, str) and delivery_id.isnumeric():
+            self.nas_id_ = int(delivery_id)
+        else:
+            raise ValueError(f"Invalid: '{delivery_id}'. Argument 'nas_id' must be an integer.")
 
     @property
     def storage_total_gb(self):
-        return self._storage_total_gb
+        return self.storage_total_gb_
 
     @property
     def storage_used_gb(self):
-        return self._storage_used_gb
+        return self.storage_used_gb_
 
     def set_storage_info(self, storage_used_gb: float = None):
 
         """Set the storage_used_gb and storage_total_gb properties."""
 
         if storage_used_gb:
-            self._storage_used_gb = storage_used_gb
+            self.storage_used_gb_ = storage_used_gb
         else:
-            if self._drive_path and os.path.exists(self._drive_path):
-                usage = shutil.disk_usage(self._drive_path)
-                self._storage_total_gb = usage.total / (1024 ** 3)
-                self._storage_used_gb = usage.used / (1024 ** 3)
+            if self.drive_path_ and os.path.exists(self.drive_path_):
+                usage = shutil.disk_usage(self.drive_path_)
+                self.storage_total_gb_ = usage.total / (1024 ** 3)
+                self.storage_used_gb_ = usage.used / (1024 ** 3)
             else:
-                self._storage_total_gb = None
-                self._storage_used_gb = None
+                self.storage_total_gb_ = None
+                self.storage_used_gb_ = None
 
     @property
     def file_count(self):
-        return self._file_count
+        return self.file_count_
 
     @file_count.setter
     def file_count(self, file_count: int = 0):
 
         if file_count:
-            self._file_count = file_count
+            self.file_count_ = file_count
         else:
-            if self._drive_path and os.path.exists(self._drive_path):
-                self._file_count = sum([len(files) for _, _, files in os.walk(self._drive_path)])
+            if self.drive_path_ and os.path.exists(self.drive_path_):
+                self.file_count_ = sum([len(files) for _, _, files in os.walk(self.drive_path_)])
             else:
-                self._file_count = None
+                self.file_count_ = None
 
     @staticmethod
     def _serial_number_win(drive_letter: str) -> str:
 
         """Get the drive serial number on Windows machines."""
-
+        # noinspection PyUnresolvedReferences
         drive_info = win32api.GetVolumeInformation(drive_letter)
         return drive_info[1]
 
     @staticmethod
     def _serial_number_linux(drive_name: str) -> str:
+        # noinspection PyUnresolvedReferences
         context = pyudev.Context()
         serial_number = None
 
@@ -164,29 +188,3 @@ class Drive(object):
                     return True
 
         return False
-
-    def serialize(self) -> str:
-        """
-        Serialize the object to a JSON-formatted string.
-        """
-        drive_data = {
-            "drive_path": self.drive_path,
-            "serial_number": self.serial_number,
-            "storage_total_gb": self.storage_total_gb,
-            "storage_used_gb": self.storage_used_gb,
-            "file_count": self.file_count,
-            "nas_id": self.nas_id,
-            "delivery_id": self.delivery_id
-        }
-
-        json_data = json.dumps(drive_data, indent=4)
-        return json_data
-
-
-def main():
-
-    drive = Drive(1, 1)
-
-
-if __name__ == "__main__":
-    main()
