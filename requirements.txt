@@ -144,3 +144,5 @@ Werkzeug==2.2.2
 XlsxWriter==3.0.3
 yaspin==2.2.0
 zipp==3.8.1
+pyudev~=0.22.0
+DateTime~=5.0
