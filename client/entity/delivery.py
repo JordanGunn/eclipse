@@ -1,5 +1,5 @@
 from .entity import Entity
-from entity_attrs import EntityName
+from .entity_attrs import EntityName
 
 
 class Delivery(Entity):

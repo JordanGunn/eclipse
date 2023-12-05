@@ -31,7 +31,7 @@ class EclipseRequest:
 
         self._entity = entity
         self.http_method = http_method.upper()
-        self.endpoint = self._ENDPOINT + entity.name
+        self.endpoint = self._ENDPOINT + entity.name + "/"
         self._valid_params = ENTITY_ATTR_MAP[entity.name]
         self._data = entity.serialize() if entity else None
         self._url_params = url_params if url_params else None

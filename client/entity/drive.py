@@ -16,7 +16,7 @@ except ImportError:
     pyudev = None
 
 # user imports
-from entity_attrs import EntityName
+from .entity_attrs import EntityName
 from .entity import Entity
 
 
