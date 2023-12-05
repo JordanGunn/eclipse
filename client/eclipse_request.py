@@ -1,29 +1,40 @@
+# system imports
 import json
 import requests
 from typing import Union
 from urllib.parse import urljoin
 
-import _eclipse_http_method
+# user imports
 from client.entity.entity import Entity
+from client.entity.entity_attrs import ENTITY_ATTR_MAP
 
 
-class _EclipseRequest:
+class EclipseHttpMethod:
+
+    """Valid http methods enabled for eclipse"""
+
+    GET = "GET"
+    POST = "POST"
+    LIST = [GET, POST]
+
+
+class EclipseRequest:
 
     """Abstract parent to various Eclipse Request objects"""
 
-    _PARAMS = tuple()
     _ENDPOINT = "/api/"
 
-    def __init__(self, http_method: str, entity: Entity, params: Union[dict, None]):
+    def __init__(self, http_method: str, entity: Entity, url_params: Union[dict, None]):
 
-        if http_method.upper() not in _eclipse_http_method.LIST:
+        if http_method.upper() not in EclipseHttpMethod.LIST:
             raise ValueError(f"Unsupported HTTP method: {http_method}")
 
         self._entity = entity
-        self.endpoint = self._ENDPOINT + entity.name
         self.http_method = http_method.upper()
-        self._params = params if params else None
+        self.endpoint = self._ENDPOINT + entity.name
+        self._valid_params = ENTITY_ATTR_MAP[entity.name]
         self._data = entity.serialize() if entity else None
+        self._url_params = url_params if url_params else None
 
     @property
     def data(self) -> Union[dict, None]:
@@ -48,15 +59,15 @@ class _EclipseRequest:
             raise ValueError(f"Property must be set to type 'dict' or 'Entity'")
 
     @property
-    def params(self) -> Union[dict, None]:
-        return self._params
+    def url_params(self) -> Union[dict, None]:
+        return self._url_params
 
-    @params.setter
-    def params(self, params: dict):
-        is_get = (self.http_method == _eclipse_http_method.GET)
+    @url_params.setter
+    def url_params(self, params: dict):
+        is_get = (self.http_method == EclipseHttpMethod.GET)
         is_valid_params = self._is_valid_params(params)
         if is_get and is_valid_params:
-            self._params = params
+            self._url_params = params
 
     @property
     def entity(self):
@@ -72,9 +83,9 @@ class _EclipseRequest:
 
         res = ""
         try:
-            if self.http_method == _eclipse_http_method.GET:
-                res = self._get(self.endpoint, self.params)
-            elif self.http_method == _eclipse_http_method.POST:
+            if self.http_method == EclipseHttpMethod.GET:
+                res = self._get(self.endpoint, self.url_params)
+            elif self.http_method == EclipseHttpMethod.POST:
                 res = self._post(self.endpoint, self.data)
         except requests.RequestException as e:
             print(f"Request failed: {e}")
@@ -117,7 +128,7 @@ class _EclipseRequest:
         """
 
         params_in = set(params.keys())
-        params_valid = set(self._PARAMS)
+        params_valid = set(self._valid_params)
         params_diff = list(params_in.difference(params_valid))
 
         return len(params_diff) == 0

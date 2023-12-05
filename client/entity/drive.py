@@ -16,7 +16,7 @@ except ImportError:
     pyudev = None
 
 # user imports
-import entity_name
+from entity_attrs import EntityName
 from .entity import Entity
 
 
@@ -28,7 +28,7 @@ class Drive(Entity):
     def __init__(self, nas_id: int, delivery_id: int):
 
         super().__init__()
-        Entity.name = entity_name.DRIVE
+        Entity.name = EntityName.DRIVE
 
         self.file_count_ = -1
         self.drive_path_ = ""
