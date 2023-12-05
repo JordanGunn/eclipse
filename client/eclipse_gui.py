@@ -98,129 +98,67 @@ class ECLIPSE_GUI:
         popup.title("Delivery")
         popup.grab_set()
 
-        titleFrame = Frame(popup)
-        titleFrame.grid(row=0, column=0, pady=15)
-        ttk.Label(titleFrame, text="Delivery").grid(row=0, column=0, padx=30)
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # inputFrame - Select input directory
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        inputFrame = ttk.LabelFrame(popup, text="Input")
-        inputFrame.grid(row=1, column=0, padx=10, pady=5, sticky=W)
-        
-        inputEntry = StringVar()
-        ttk.Entry(
-            inputFrame,
-            width=40,
-            textvariable=inputEntry
-        ).grid(row=0, column=0, padx=5)
-        ttk.Button(
-            inputFrame,
-            text="Browse to input\ndirectory",
-            command=lambda: self.path_select(inputEntry)
-        ).grid(row=0, column=1, pady=(0,5))
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Drive serial number - Serial number of the physical drive
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        driveFrame = ttk.LabelFrame(popup, text="Drive serial number")
-        driveFrame.grid(row=2, column=0, padx=10, pady=5, sticky=W)
-        
-        driveEntry = StringVar()
-        ttk.Entry(
-            driveFrame,
-            width=40,
-            textvariable=driveEntry
-        ).grid(row=0, column=0, padx=5, pady=(0,5))
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Receiver Name - Name of the GeoBC staff member
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        receiverFrame = ttk.LabelFrame(popup, text="Receiver name")
-        receiverFrame.grid(row=3, column=0, padx=10, pady=5, sticky=W)
+        receiverFrame = Frame(popup)
+        receiverFrame.grid(row=0, column=0, padx=10, pady=5, sticky=W)
+        ttk.Label(receiverFrame, text="Receiver name").grid(row=0, column=0, padx=5, sticky=W)
         
         receiverEntry = StringVar()
         ttk.Entry(
             receiverFrame,
             width=40,
             textvariable=receiverEntry
-        ).grid(row=0, column=0, padx=5, pady=(0,5))
+        ).grid(row=1, column=0, padx=5, pady=(0,5))
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Date received - The date the drive was received
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        dateFrame = ttk.LabelFrame(popup, text="Date received")
-        dateFrame.grid(row=4, column=0, padx=10, pady=5, sticky=W)
+        dateFrame = Frame(popup)
+        dateFrame.grid(row=1, column=0, padx=10, pady=5, sticky=W)
+        ttk.Label(dateFrame, text="Date received").grid(row=0, column=0, padx=5, sticky=W)
         
         calendar = Calendar(dateFrame, selectmode = 'day')
-        calendar.grid(row=0, column=0, padx=5, pady=(0,5))
+        calendar.grid(row=1, column=0, padx=5, pady=(0,5))
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Comments - Any additional comments from the user
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        commentFrame = ttk.LabelFrame(popup, text="Comments")
-        commentFrame.grid(row=5, column=0, padx=10, pady=5, sticky=W)
+        commentFrame = Frame(popup)
+        commentFrame.grid(row=2, column=0, padx=10, pady=5, sticky=W)
+        ttk.Label(commentFrame, text="Comments").grid(row=0, column=0, padx=5, sticky=W)
+
         
         commentEntry = StringVar()
         ttk.Entry(
             commentFrame,
             width=55,
             textvariable=commentEntry
-        ).grid(row=0, column=0, padx=5, pady=(0,5))
+        ).grid(row=1, column=0, padx=5, pady=(0,5))
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Submit Button - Saves and validates above info and sends to DB
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         submitFrame = ttk.Frame(popup)
-        submitFrame.grid(row=6, column=0, padx=10, pady=5)
+        submitFrame.grid(row=3, column=0, padx=10, pady=5)
 
         ttk.Button(
             submitFrame,
             text="Submit",
-            command=lambda: self.deliveryValidation(inputEntry, driveEntry, receiverEntry, calendar, commentEntry)
+            command=lambda: self.deliveryValidation(receiverEntry, calendar, commentEntry)
         ).grid(row=0, column=0)
 
 
-    def deliveryValidation(self, inputEntry, driveEntry, receiverEntry, calendar, commentEntry):
-        inputPath = inputEntry.get()
-        driveSerial = driveEntry.get()
+    def deliveryValidation(self, receiverEntry, calendar, commentEntry):
         receiverName = receiverEntry.get()
         dateReceived = calendar.get_date()
         comments = commentEntry.get()
         whitespaces = [" ", "\n"]
 
         try:
-            # Check if input path is valid ------------------------------------------------
 
-            # Remove leading and trailing whitespace from input path
-            inputPath = inputPath.strip()
-            
-            # Check if input directory contains spaces
-            if ' ' in inputPath:
-                raise ValueError("Invaild input path. Please remove spaces from input path.")
-
-            # Check if input directory exists
-            if not os.path.exists(inputPath):
-                raise ValueError("Input path does not exist! Please provide another path.")
-        
-            # Search path for valid file types. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            # Drive serial number ---------------------------------------------------------
-            if driveSerial == "":
-                raise ValueError("Drive serial number left blank! Please provide a drive serial number.")
-            
-            isWhiteSpace = True
-            for char in driveSerial:
-                if char in whitespaces:
-                    continue
-                else:
-                    isWhiteSpace = False
-                    break
-            if isWhiteSpace:
-                raise ValueError("Invalid drive serial number! Please provide a valid drive serial number.")
-            
             # Receiver name ---------------------------------------------------------
-
             if receiverName == "":
                 raise ValueError("Receiver name left blank! Please provide a receiver name.")
             
@@ -242,11 +180,8 @@ class ECLIPSE_GUI:
             return
         
 
-        print(f'inputPath: {inputPath}\ndriveSerial: {driveSerial}\nreceiverName: {receiverName}\ndateReceived: {dateReceived}\ncomments: {comments}')
+        print(f'receiverName: {receiverName}\ndateReceived: {dateReceived}\ncomments: {comments}')
 
-
-
-        
         
     def path_select(self, pathSV):
         """
