@@ -187,6 +187,64 @@ class ECLIPSE_GUI:
         receiverName = receiverEntry.get()
         dateReceived = calendar.get_date()
         comments = commentEntry.get()
+        whitespaces = [" ", "\n"]
+
+        try:
+            # Check if input path is valid ------------------------------------------------
+
+            # Remove leading and trailing whitespace from input path
+            inputPath = inputPath.strip()
+            
+            # Check if input directory contains spaces
+            if ' ' in inputPath:
+                raise ValueError("Invaild input path. Please remove spaces from input path.")
+
+            # Check if input directory exists
+            if not os.path.exists(inputPath):
+                raise ValueError("Input path does not exist! Please provide another path.")
+        
+            # Search path for valid file types. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            # Drive serial number ---------------------------------------------------------
+            if driveSerial == "":
+                raise ValueError("Drive serial number left blank! Please provide a drive serial number.")
+            
+            isWhiteSpace = True
+            for char in driveSerial:
+                if char in whitespaces:
+                    continue
+                else:
+                    isWhiteSpace = False
+                    break
+            if isWhiteSpace:
+                raise ValueError("Invalid drive serial number! Please provide a valid drive serial number.")
+            
+            # Receiver name ---------------------------------------------------------
+
+            if receiverName == "":
+                raise ValueError("Receiver name left blank! Please provide a receiver name.")
+            
+            isWhiteSpace = True
+            for char in receiverName:
+                if char in whitespaces:
+                    continue
+                else:
+                    isWhiteSpace = False
+                    break
+            if isWhiteSpace:
+                raise ValueError("Invalid receiver name! Please provide a valid receiver name.")
+
+        except ValueError as inputError:
+            messagebox.showerror(
+                "Input Error", 
+                str(inputError)
+                )
+            return
+        
+
+        print(f'inputPath: {inputPath}\ndriveSerial: {driveSerial}\nreceiverName: {receiverName}\ndateReceived: {dateReceived}\ncomments: {comments}')
+
+
 
         
         
