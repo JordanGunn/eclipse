@@ -1,12 +1,12 @@
-import entity_name
 from .entity import Entity
+from entity_attrs import EntityName
 
 
 class Delivery(Entity):
 
     def __init__(self):
         super().__init__()
-        Entity.name = entity_name.DELIVERY
+        Entity.name = EntityName.DELIVERY
 
         self.receiver_name_ = ""
         self.time_stamp_ = ""
