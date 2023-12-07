@@ -28,7 +28,7 @@ class Drive(Entity):
     def __init__(self, nas_id: int, delivery_id: int):
 
         super().__init__()
-        Entity.name = EntityName.DRIVE
+        self._name = EntityName.DRIVE
 
         self.file_count_ = -1
         self.drive_path_ = ""
