@@ -24,7 +24,7 @@ class EclipseRequest:
 
     _ENDPOINT = "/api/"
 
-    def __init__(self, http_method: str, entity: Entity, url_params: Union[dict, None]):
+    def __init__(self, http_method: str, entity: Entity, url_params: Union[dict, None] = None):
 
         if http_method.upper() not in _EclipseHttpMethod.LIST:
             raise ValueError(f"Unsupported HTTP method: {http_method}")
