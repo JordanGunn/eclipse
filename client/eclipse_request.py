@@ -9,7 +9,7 @@ from client.entity.entity import Entity
 from client.entity.entity_attrs import ENTITY_ATTR_MAP
 
 
-class EclipseHttpMethod:
+class _EclipseHttpMethod:
 
     """Valid http methods enabled for eclipse"""
 
@@ -24,20 +24,20 @@ class EclipseRequest:
 
     _ENDPOINT = "/api/"
 
-    def __init__(self, http_method: str, entity: Entity, url_params: Union[dict, None]):
+    def __init__(self, http_method: str, entity: Entity, url_params: Union[dict, None] = None):
 
-        if http_method.upper() not in EclipseHttpMethod.LIST:
+        if http_method.upper() not in _EclipseHttpMethod.LIST:
             raise ValueError(f"Unsupported HTTP method: {http_method}")
 
         self._entity = entity
         self.http_method = http_method.upper()
         self.endpoint = self._ENDPOINT + entity.name + "/"
         self._valid_params = ENTITY_ATTR_MAP[entity.name]
-        self._data = entity.serialize() if entity else None
+        self._data = entity.serialize()
         self._url_params = url_params if url_params else None
 
     @property
-    def data(self) -> Union[dict, None]:
+    def data(self) -> str:
         return self._data
 
     @data.setter
@@ -64,7 +64,7 @@ class EclipseRequest:
 
     @url_params.setter
     def url_params(self, params: dict):
-        is_get = (self.http_method == EclipseHttpMethod.GET)
+        is_get = (self.http_method == _EclipseHttpMethod.GET)
         is_valid_params = self._is_valid_params(params)
         if is_get and is_valid_params:
             self._url_params = params
@@ -83,9 +83,9 @@ class EclipseRequest:
 
         res = ""
         try:
-            if self.http_method == EclipseHttpMethod.GET:
+            if self.http_method == _EclipseHttpMethod.GET:
                 res = self._get(self.endpoint, self.url_params)
-            elif self.http_method == EclipseHttpMethod.POST:
+            elif self.http_method == _EclipseHttpMethod.POST:
                 res = self._post(self.endpoint, self.data)
         except requests.RequestException as e:
             print(f"Request failed: {e}")
