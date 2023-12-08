@@ -2,7 +2,7 @@
 import os
 import shutil
 import psutil
-from typing import Union
+from typing import Union, Optional
 
 # system-specific imports
 try:
@@ -25,7 +25,7 @@ from .entity import Entity
 
 class Drive(Entity):
 
-    def __init__(self, nas_id: int, delivery_id: int):
+    def __init__(self, nas_id: Optional[int] = -1, delivery_id: Optional[int] = -1):
 
         super().__init__()
         self._name = EntityName.DRIVE

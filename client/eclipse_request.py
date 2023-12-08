@@ -1,7 +1,7 @@
 # system imports
 import json
 import requests
-from typing import Union
+from typing import Union, Optional
 from urllib.parse import urljoin
 
 # user imports
@@ -20,57 +20,104 @@ class _EclipseHttpMethod:
 
 class EclipseRequest:
 
-    """Abstract parent to various Eclipse Request objects"""
+    """EclipseRequest class. Prepares and handles send/recv of eclipse HTTP requests."""
 
     _ENDPOINT = "/api/"
 
-    def __init__(self, http_method: str, entity: Entity, url_params: Union[dict, None] = None):
+    def __init__(self, http_method: str, entity: Entity, url_params: Optional[dict] = None):
+
+        """
+        Initialize EclipseRequest object.
+
+        Constructor has one optional argument 'url_params'. The url_params must be passed as
+        a dictionary containing valid url query parameters for the entity associated with it.
+
+        >>> from client.entity.drive import Drive
+        >>> params = {"id": 1, "serial_number": "DEADBEEF"}
+        >>> drive = Drive()
+        >>> erq = EclipseRequest("GET", drive, params)
+
+        :param http_method: A valid HTTP request method (e.g. 'GET', 'Get', 'gEt').
+        :param entity: An object that intherits from the Entity base class (e.g. Drive object)
+        :param url_params:
+        """
 
         if http_method.upper() not in _EclipseHttpMethod.LIST:
             raise ValueError(f"Unsupported HTTP method: {http_method}")
 
         self._entity = entity
+        self._data = entity.serialize()
         self.http_method = http_method.upper()
         self.endpoint = self._ENDPOINT + entity.name + "/"
         self._valid_params = ENTITY_ATTR_MAP[entity.name]
-        self._data = entity.serialize()
-        self._url_params = url_params if url_params else None
+        self._url_params = url_params if self._is_valid_params(url_params) else None
 
     @property
     def data(self) -> str:
+
+        """Get EclipseRequest 'data' property."""
+
         return self._data
 
     @data.setter
-    def data(self, data: Union[Entity, dict]):
+    def data(self, data: Entity):
 
         """
         Setter for DriveRequest.data ...
 
-        Accepts either a Drive object 'from entity.drive import Drive',
-        a dictionary representing a serialized drive object, or a dictionary
-        containing key-value pairs for URL query parameters.
+        Accepts an object that inherits from Entity.
+
+        :param data: An Entity derived object.
+        :return:
         """
 
         if isinstance(data, Entity):
+            self._entity = data
             self._data = data.serialize()
-        elif isinstance(data, dict):
-            self._data = data
         else:
             raise ValueError(f"Property must be set to type 'dict' or 'Entity'")
 
     @property
     def url_params(self) -> Union[dict, None]:
+
+        """Get EclipseRequest 'url_params' property."""
+
         return self._url_params
 
     @url_params.setter
     def url_params(self, params: dict):
+
+        """
+        Set the EclipseRequest 'url_params' property.
+
+        Sets the url params property in the event that the EclipseRequest
+        was initialized for the 'GET' http method.
+
+        Also note that the argument params must contain
+        valid query parameters for the derived Entity
+        object. If params argument contains invalid
+        query parameters, method will raise a ValueError.
+
+        :param params: A dictionary containing key-value query params.
+        :raises ValueError: Failure to pass valid url query params.
+        """
+
         is_get = (self.http_method == _EclipseHttpMethod.GET)
-        is_valid_params = self._is_valid_params(params)
-        if is_get and is_valid_params:
-            self._url_params = params
+        if is_get:
+            if self._is_valid_params(params):
+                self._url_params = params
+            else:
+                raise ValueError(
+                    f"Invalid query parameters: {params.keys()}"
+                )
+        else:
+            self._url_params = None
 
     @property
-    def entity(self):
+    def entity(self) -> Entity:
+
+        """Get EclipseRequest 'entity' property."""
+
         return self._entity
 
     def send(self) -> str:
@@ -94,10 +141,14 @@ class EclipseRequest:
 
         return res
 
-    def _get(self, endpoint: str, params: Union[dict, None]) -> str:
+    def _get(self, endpoint: str, params: Optional[dict]) -> str:
 
         """
         Generic GET request handler.
+
+        :param endpoint: API endpoint.
+        :param params: A valid url query params dictionary.
+        :return:
         """
 
         url = urljoin(self._ENDPOINT, endpoint)
@@ -108,6 +159,10 @@ class EclipseRequest:
 
         """
         Generic POST request handler.
+
+        :param endpoint: API endpoint.
+        :param data: A valid url query params dictionary.
+        :return:
         """
 
         url = urljoin(self._ENDPOINT, endpoint)
