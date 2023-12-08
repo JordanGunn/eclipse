@@ -15,13 +15,14 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='LidarClassified',
+            name='LidarStrip',
             fields=[
                 ('id', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='Lidar.lidar')),
-                ('bounding_box', django.contrib.gis.db.models.fields.PolygonField(blank=True, null=True, srid=4326)),
+                ('convex_hull', django.contrib.gis.db.models.fields.PolygonField(blank=True, null=True, srid=4326)),
+                ('file_source_id', models.IntegerField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'lidarclassified',
+                'db_table': 'lidarraw',
                 'managed': False,
             },
         ),

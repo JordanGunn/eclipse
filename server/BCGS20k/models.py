@@ -8,6 +8,7 @@ class BCGS20k(models.Model):
     tile_20k = models.CharField(max_length=32, blank=True, primary_key=True)
     geometry = gismodels.MultiPolygonField(geography=True, blank=True, null=True)
     priority = models.BooleanField(blank=True, null=True)
+    is_covered = models.BooleanField(blank=True, null=True)
 
     class Meta:
         managed = False

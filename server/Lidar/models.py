@@ -16,7 +16,7 @@ class Lidar(models.Model):
     version = models.FloatField(blank=True, null=True)
     epsg_code = models.ForeignKey('SpatialReference.SpatialReference', models.DO_NOTHING, blank=True, null=True)
     nas_id = models.ForeignKey('NASBox.NASBox', models.DO_NOTHING, blank=True, null=True)
-    delivery_id = models.ForeignKey('Delivery.Delivery', models.DO_NOTHING, blank=True, null=True)
+    trajectory_id = models.ForeignKey('Trajectory.Trajectory', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
