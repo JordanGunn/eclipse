@@ -4,6 +4,6 @@ from .models import Trajectory
 from .serializers import TrajectorySerializer
 
 
-class LidarViewSet(viewsets.ModelViewSet):
+class TrajectoryViewSet(viewsets.ModelViewSet):
     queryset = Trajectory.objects.all()
     serializer_class = TrajectorySerializer
