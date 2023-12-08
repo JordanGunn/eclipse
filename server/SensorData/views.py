@@ -4,6 +4,6 @@ from .models import SensorData
 from .serializers import SensorDataSerializer
 
 
-class LidarViewSet(viewsets.ModelViewSet):
+class SensorDataViewSet(viewsets.ModelViewSet):
     queryset = SensorData.objects.all()
     serializer_class = SensorDataSerializer
