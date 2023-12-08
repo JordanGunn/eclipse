@@ -50,14 +50,16 @@ INSTALLED_APPS = [
     'Drive',
     'Lidar',
     'ProcessingStatus',
-    'LidarRaw',
-    'LidarClassified',
+    'LidarStrip',
+    'LidarTile',
     'BCGS2500k',
     'BCGS20k',
     'SpatialReference',
     'UTMZone',
     'Epoch',
-    'DerivedProduct'
+    'DerivedProduct',
+    'SensorData',
+    'Trajectory'
     
 ]
 

@@ -25,14 +25,16 @@ from NASBox.views import NASboxViewSet
 from Delivery.views import DeliveryViewSet
 from Lidar.views import LidarViewSet
 from ProcessingStatus.views import ProcessingStatusViewSet
-from LidarClassified.views import LidarClassifiedViewSet
-from LidarRaw.views import LidarRawViewSet
+from LidarTile.views import LidarTileViewSet
+from LidarStrip.views import LidarStripViewSet
 from BCGS2500k.views import BCGS2500kViewSet
 from BCGS20k.views import BCGS20kViewSet
 from SpatialReference.views import SpatialReferenceViewSet
 from UTMZone.views import UTMZoneViewSet
 from Epoch.views import EpochViewSet
 from DerivedProduct.views import DerivedProductViewSet
+from Trajectory.views import TrajectoryViewSet
+from SensorData.views import SensorDataViewSet
 
 # router registration for endpoints
 router = DefaultRouter()
@@ -41,14 +43,16 @@ router.register(r'nasbox', NASboxViewSet)
 router.register(r'delivery', DeliveryViewSet)
 router.register(r'lidar', LidarViewSet)
 router.register(r'processingstatus', ProcessingStatusViewSet)
-router.register(r'lidarclassified', LidarClassifiedViewSet)
-router.register(r'lidarraw', LidarRawViewSet)
+router.register(r'lidartile', LidarTileViewSet)
+router.register(r'lidarstrip', LidarStripViewSet)
 router.register(r'bcgs2500k', BCGS2500kViewSet)
 router.register(r'bcgs20k', BCGS20kViewSet)
 router.register(r'spatialreference', SpatialReferenceViewSet)
 router.register(r'utmzone', UTMZoneViewSet)
 router.register(r'epoch', EpochViewSet)
 router.register(r'derivedproduct', DerivedProductViewSet)
+router.register(r'sensordata', SensorDataViewSet)
+router.register(r'trajectory', TrajectoryViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),

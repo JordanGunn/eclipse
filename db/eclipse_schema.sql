@@ -62,6 +62,27 @@ CREATE TABLE IF NOT EXISTS Delivery (
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- Create the LidarFile table
+CREATE TABLE IF NOT EXISTS Trajectory (
+  id SERIAL PRIMARY KEY,
+  file_name VARCHAR(255),
+  file_path VARCHAR(255),
+  file_size VARCHAR(255),
+  nas_id INTEGER REFERENCES NASBox(id)
+);
+
+-- Create the LidarFile table
+CREATE TABLE IF NOT EXISTS SensorData (
+  id SERIAL PRIMARY KEY,
+  file_name VARCHAR(255),
+  file_path VARCHAR(255),
+  file_size VARCHAR(255),
+  nas_id INTEGER REFERENCES NASBox(id),
+  delivery_id INTEGER REFERENCES Delivery(id),
+  trajectory_id INTEGER REFERENCES Trajectory(id)
+);
+
 -- Create the LidarFile table
 CREATE TABLE IF NOT EXISTS Lidar (
   id SERIAL PRIMARY KEY,
@@ -76,22 +97,23 @@ CREATE TABLE IF NOT EXISTS Lidar (
   version REAL,
   epsg_code INTEGER REFERENCES SpatialReference(epsg_code),
   nas_id INTEGER REFERENCES NASBox(id),
-  delivery_id INTEGER REFERENCES Delivery(id)
+  trajectory_id INTEGER REFERENCES Trajectory(id)
 );
 
 -- Create the LidarClassified table
 -- -- tile_2500k reference added in 'eclipse_insertion.sql' script
-CREATE TABLE IF NOT EXISTS LidarClassified (
+CREATE TABLE IF NOT EXISTS LidarTile (
   id SERIAL PRIMARY KEY REFERENCES Lidar(id),
   bounding_box POLYGON
 );
 
 -- Create the LidarRaw table
-CREATE TABLE IF NOT EXISTS LidarRaw (
+CREATE TABLE IF NOT EXISTS LidarStrip (
   id SERIAL PRIMARY KEY REFERENCES Lidar(id),
   convex_hull POLYGON,
   file_source_id INTEGER
 );
+
 
 -- Create the DerivedProduct table
 -- -- tile_20k reference added in 'eclipse_insertion.sql' script
