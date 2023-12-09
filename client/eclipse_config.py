@@ -7,6 +7,20 @@ import psutil
 
 
 # ==================
+# NETWORK CONSTANTS
+# ==================
+class EclipseNetworkConfig:
+
+    class Port:
+        P_8000 = 8000
+
+    class Host:
+        LOCALHOST = "localhost"
+        LOOPBACK_ADDR = "127.0.0.1"
+
+
+
+# ==================
 # SYSTEM CONSTANTS
 # ==================
 class SupportedOS:

@@ -1,18 +1,15 @@
-from client.entity import Drive
+from client.entity import Drive, Nasbox
 from client.copy import EclipseCopy
 from eclipse_request import EclipseRequest
 
 
 def main():
 
-    drv = Drive(nas_id=1, delivery_id=2)
+    nb = Nasbox()
 
-    ereq = EclipseRequest("POST", drv, url_params=None)
-    ereq.send()
-
-    ecopy = EclipseCopy("src", "dst")
-    ecopy.nas_id = 1
-    ecopy.delivery_id = 1
+    ereq = EclipseRequest("GET", nb, url_params=None)
+    res = ereq.send()
+    print()
 
 
 if __name__ == "__main__":

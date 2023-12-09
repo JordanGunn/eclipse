@@ -15,22 +15,21 @@ WINDOWS_OS = "windows"
 
 class Nasbox(Entity):
 
-    def __init__(self, name: Optional[str] = "", location: Optional[str] = "", ipv4_addr: Optional[str] = "", capacity_gb: Optional[float] = ""):
+    def __init__(self, nas_name: Optional[str] = "", location: Optional[str] = "", ipv4_addr: Optional[str] = "", capacity_gb: Optional[float] = ""):
         super().__init__()
-        Entity.name = EntityName.NASBOX
-
-        self.name_ = name if name else ""
+        self.name = EntityName.NASBOX
+        self.nas_name_ = nas_name if nas_name else ""
         self.location_ = location if location else ""
         self.ipv4_addr_ = ipv4_addr if ipv4_addr else ""
         self.capacity_gb_ = capacity_gb if capacity_gb else float("nan")
 
     @property
-    def name(self) -> str:
-        return self.name_
+    def nas_name(self) -> str:
+        return self.nas_name_
 
-    @name.setter
-    def name(self, name: str):
-        self.name_ = name
+    @nas_name.setter
+    def nas_name(self, nas_name: str):
+        self.nas_name_ = nas_name
 
     @property
     def location(self) -> str:

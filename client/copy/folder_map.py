@@ -1,5 +1,5 @@
 from typing import Dict
-from const import RiProcessSourceDir, GeoBCDirName, GeoBCDirExt
+from .const import RiProcessSourceDir, GeoBCDirName, GeoBCDirExt
 
 
 class FolderMapKey:
