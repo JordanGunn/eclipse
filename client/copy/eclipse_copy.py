@@ -7,13 +7,11 @@ from typing import Optional
 from tkinter.filedialog import askdirectory
 
 # user imports
+from client.eclipse_config import IS_LINUX
 from client.eclipse_request import EclipseRequest
-from client.entity import Nasbox, SensorData, Drive, Delivery
-from folder_map import KISIK_TO_GEOBC, FolderMapDefinition, FolderMapKey
-from client.eclipse_config import IS_LINUX, IS_WINDOWS, IS_UNSUPPORTED_OS
+from client.entity import Nasbox, SensorData, Drive
+from folder_map import FolderMapDefinition, FolderMapKey
 
-
-# TODO SET FILE PERMISSIONS OF SOURCE TO READ ONLY
 
 class EclipseCopy:
 
@@ -53,15 +51,12 @@ class EclipseCopy:
         if not os.path.exists(src):
             raise ValueError(f"Path {src} does not exist.")
 
-        else:  # set the source and anything else we can.
+        else:  # set the src and update related properties.
             self._src = src
-            if not self._drive:
-                self._drive = Drive()
-                self._drive.set_drive_info(src)
-
-            if not self._files:
-                self._gather_files()
-                self._create_records()
+            self._drive = Drive()
+            self._drive.set_drive_info(src)
+            self._gather_files()
+            self._create_records()
 
     @property
     def dst(self) -> str:
@@ -72,49 +67,85 @@ class EclipseCopy:
         if not os.path.exists(dst):
             raise ValueError(f"Path {dst} does not exist.")
 
-        self._dst = dst
-        if not self._nasbox:
+        else:  # set the dst and update related properties.
+            self._dst = dst
             self._nasbox = Nasbox()
             self._nasbox.set_ipv4_addr(dst)
 
     @property
     def drive(self) -> Drive:
+
+        """Get the drive property."""
+
         return self._drive
 
     @drive.setter
     def drive(self, drive: Drive):
+
+        """Set teh drive property."""
+
         self._drive = drive
 
     @property
     def folder_mapping(self) -> FolderMapDefinition:
+
+        """Get the folder mapping property."""
+
         return self._folder_mapping
 
     @folder_mapping.setter
     def folder_mapping(self, folder_mapping: FolderMapDefinition):
+
+        """Set the folder_mapping property."""
+
         self._folder_mapping = folder_mapping
 
     @property
     def nasbox(self) -> Nasbox:
+
+        """Get the nasbox property."""
+
         return self._nasbox
 
     @nasbox.setter
     def nasbox(self, nasbox: Nasbox):
+
+        """Set the nasbox property."""
+
         self._nasbox = nasbox
 
     @property
     def files(self) -> list:
+
+        """Get the files property."""
+
         return self._files
 
     @property
     def records(self) -> list:
+
+        """Get the records property."""
+
         return self._records
 
     @property
     def nas_id(self):
+
+        """Get the nas_id property."""
+
         return self._nas_id
 
     @nas_id.setter
     def nas_id(self, nas_id: int):
+
+        """
+        Set the nas_id property.
+
+        Sets the nas_id property, updating any associated
+        properties that use the nas_id.
+
+        :param nas_id:
+        """
 
         if nas_id <= 0:
             raise ValueError("nas_id must be >= 1")
@@ -133,10 +164,23 @@ class EclipseCopy:
 
     @property
     def delivery_id(self):
+
+        """Get the delivery_id property."""
+
         return self._delivery_id
 
     @delivery_id.setter
     def delivery_id(self, delivery_id: int):
+
+        """
+        Set the delivery id property.
+
+        Sets the delivery id property, updating any associated
+        properties that use the delivery_id.
+
+        :param delivery_id:
+        :return:
+        """
 
         if delivery_id <= 0:
             raise ValueError("delivery_id must be >= 1")
@@ -152,6 +196,46 @@ class EclipseCopy:
             for record in self._records:
                 if record.delivery_id <= 0:
                     record.delivery_id = delivery_id
+
+    def copy(self) -> list:
+
+        """
+        Copy from the delivered source folder structure and translate
+        into the GeoBC defined folder structure.
+
+        Note that as of August 12, 2023, the folder structure of src
+        is defined by the folder tree delivered by the currently contracted
+        company responsible for acquisition
+
+        :return: A list of files that failed to copy (if any.)
+        """
+
+        if not self.dst:
+            raise ValueError("The 'dst' property has not been set.")
+
+        if self.nas_id <= 0:
+            raise CopyError.NoNasIdFkError
+        if self.delivery_id <= 0:
+            raise CopyError.NoDeliveryIdFkError
+
+        failed_copy = []
+        erq = EclipseRequest("POST", self._drive)
+        res = erq.send()
+        if not res:
+            raise ConnectionError("Failed to post drive record to Eclipse database.")
+        for record, file in zip(self._records, self._files):
+            try:
+                f_dir = os.path.dirname(file)
+                dst_dir = os.path.join(self.dst, f_dir)
+                os.makedirs(dst_dir, exist_ok=True)
+                shutil.copy2(file, dst_dir)
+                erq = EclipseRequest("POST", record)
+                erq.send()
+
+            except Exception as e:
+                failed_copy.append((file, e))
+
+        return failed_copy
 
     def _gather_files(self):
 
@@ -225,7 +309,7 @@ class EclipseCopy:
             dst += '/'
 
         # Construct the rsync command
-        cmd = [ 'rsync', '-a', '--include', '*/', '--exclude', '*', src, dst]
+        cmd = ['rsync', '-a', '--include', '*/', '--exclude', '*', src, dst]
 
         # Execute the command
         subprocess.run(cmd, check=True)
@@ -247,7 +331,7 @@ class EclipseCopy:
 
     def _copy_folder_structure(self, src, dst) -> str:
         """
-        Copies the folder structure from source to dest, excluding files.
+        Copies the folder structure from src to dst, excluding files.
         :param src: The source directory path.
         :param dst: The destination directory path.
         :return: The copied destination folder
@@ -255,49 +339,13 @@ class EclipseCopy:
 
         # get the new copied destination
         head, root = os.path.split(src)
-        dest_root = os.path.join(dst, root)
-        os.makedirs(dest_root, exist_ok=True)
-        self._linux_shell_copy(src, dest_root) \
+        dst_root = os.path.join(dst, root)
+        os.makedirs(dst_root, exist_ok=True)
+        self._linux_shell_copy(src, dst_root) \
             if IS_LINUX \
-            else self._win_shell_copy(src, dest_root)
+            else self._win_shell_copy(src, dst_root)
 
-        return dest_root
-
-    def copy(self) -> list:
-
-        """
-        Copy from the delivered source folder structure and translate
-        into the GeoBC defined folder structure.
-
-        Note that as of August 12, 2023, the folder structure of src
-        is defined by the folder tree delivered by the currently contracted
-        company responsible for acquisition
-
-        :return: A list of files that failed to copy (if any.)
-        """
-
-        if not self.dst:
-            raise ValueError("The 'dst' property has not been set.")
-
-        if self.nas_id <= 0:
-            raise CopyError.NoNasIdFkError
-        if self.delivery_id <= 0:
-            raise CopyError.NoDeliveryIdFkError
-
-        failed_copy = []
-        erq = EclipseRequest("POST", self._drive)
-        for record, file in zip(self._records, self._files):
-            try:
-                f_dir = os.path.dirname(file)
-                dest_dir = os.path.join(self.dst, f_dir)
-                os.makedirs(dest_dir, exist_ok=True)
-                shutil.copy2(file, dest_dir)
-                erq = EclipseRequest("POST", record)
-                erq.send()
-            except Exception as e:
-                failed_copy.append((file, e))
-
-        return failed_copy
+        return dst_root
 
 
 def lp_ftree_json(path: str):
@@ -334,7 +382,7 @@ def main():
     # Quick and dirty "GUI"
     src = askdirectory(title="Select the source ROOT directory (Copy from).")
     dst = askdirectory(title="Select the destination ROOT directory. (Copy to)")
-
+    print(src, dst)
 
 
 if __name__ == "__main__":
