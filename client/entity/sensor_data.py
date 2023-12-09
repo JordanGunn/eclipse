@@ -10,7 +10,7 @@ GB_CONVERT = (1024 * 1024 * 1024)
 
 class SensorData(Entity):
 
-    def __init__(self, nas_id: int, delivery_id: int, file_path: Optional[str] = ""):
+    def __init__(self, nas_id: Optional[int] = -1, delivery_id: int = -1, file_path: Optional[str] = ""):
         super().__init__()
         Entity.name = EntityName.NASBOX
 
@@ -31,9 +31,17 @@ class SensorData(Entity):
     def nas_id(self) -> int:
         return self.nas_id_
 
+    @nas_id.setter
+    def nas_id(self, nas_id: int):
+        self.nas_id_ = nas_id
+
     @property
     def delivery_id(self) -> int:
         return self.delivery_id_
+
+    @delivery_id.setter
+    def delivery_id(self, delivery_id: int):
+        self.delivery_id_ = delivery_id
 
     @property
     def file_name(self) -> str:

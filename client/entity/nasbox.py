@@ -15,7 +15,7 @@ WINDOWS_OS = "windows"
 
 class Nasbox(Entity):
 
-    def __init__(self, name: Optional[str], location: Optional[str], ipv4_addr: Optional[str], capacity_gb: Optional[float]):
+    def __init__(self, name: Optional[str] = "", location: Optional[str] = "", ipv4_addr: Optional[str] = "", capacity_gb: Optional[float] = ""):
         super().__init__()
         Entity.name = EntityName.NASBOX
 
