@@ -9,7 +9,19 @@ import psutil
 # ==================
 # SYSTEM CONSTANTS
 # ==================
-IS_LINUX = (sys.platform == "linux") or (sys.platform == "linux2")
+class SupportedOS:
+    """Supported operating systems."""
+
+    LINUX = "linux"
+    LINUX2 = "linux2"
+    WINDOWS = "windows"
+    LIST = [LINUX, LINUX2, WINDOWS]
+
+
+NATIVE_OS = sys.platform.lower()
+IS_UNSUPPORTED_OS = (NATIVE_OS not in SupportedOS.LIST)
+IS_WINDOWS = (NATIVE_OS == SupportedOS.WINDOWS)
+IS_LINUX = (NATIVE_OS == SupportedOS.LINUX) or (sys.platform == SupportedOS.LINUX2)
 SHELL_EXEC = "/usr/bin/zsh" if IS_LINUX else None
 
 

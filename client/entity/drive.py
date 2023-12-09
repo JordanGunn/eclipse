@@ -49,6 +49,8 @@ class Drive(Entity):
 
         if self._is_external_drive(drive_path):
             self.drive_path_ = drive_path
+            if not self.serial_number_:
+                self.serial_number = ""  # Empty string will check the drive path.
         else:
             self.drive_path_ = None
 
@@ -119,20 +121,21 @@ class Drive(Entity):
     def storage_used_gb(self):
         return self.storage_used_gb_
 
-    def set_storage_info(self, storage_used_gb: float = None):
+    def set_drive_info(self, drive_path: Optional[str] = None):
 
         """Set the storage_used_gb and storage_total_gb properties."""
 
-        if storage_used_gb:
-            self.storage_used_gb_ = storage_used_gb
-        else:
-            if self.drive_path_ and os.path.exists(self.drive_path_):
-                usage = shutil.disk_usage(self.drive_path_)
-                self.storage_total_gb_ = usage.total / (1024 ** 3)
-                self.storage_used_gb_ = usage.used / (1024 ** 3)
-            else:
-                self.storage_total_gb_ = None
-                self.storage_used_gb_ = None
+        # update the drive path if passed as arg
+        if drive_path:
+            self.drive_path_ = drive_path
+
+        # otherwise, use the existing drive path.
+        if self.drive_path_ and os.path.exists(self.drive_path_):
+            self.file_count = 0      # setter looks at drive path when passed an empty string.
+            self.serial_number = ""  # setter looks at drive path when passed an empty string.
+            usage = shutil.disk_usage(self.drive_path_)
+            self.storage_total_gb_ = usage.total / (1024 ** 3)
+            self.storage_used_gb_ = usage.used / (1024 ** 3)
 
     @property
     def file_count(self):
@@ -147,7 +150,7 @@ class Drive(Entity):
             if self.drive_path_ and os.path.exists(self.drive_path_):
                 self.file_count_ = sum([len(files) for _, _, files in os.walk(self.drive_path_)])
             else:
-                self.file_count_ = None
+                self.file_count_ = -1
 
     @staticmethod
     def _serial_number_win(drive_letter: str) -> str:
