@@ -10,7 +10,7 @@ from tkinter.filedialog import askdirectory
 from client.eclipse_config import IS_LINUX
 from client.eclipse_request import EclipseRequest
 from client.entity import Nasbox, SensorData, Drive
-from folder_map import FolderMapDefinition, FolderMapKey
+from .folder_map import FolderMapDefinition, FolderMapKey
 
 
 class EclipseCopy:
@@ -19,6 +19,21 @@ class EclipseCopy:
             self, src: str, dst: str, nas_id: Optional[int] = -1,
             delivery_id: Optional[int] = -1, folder_mapping: Optional[FolderMapDefinition] = None
     ):
+
+        """
+        Initialize an EclipseCopy object. \n
+        \n
+        Creates an EclipseCopy object. Note that the only mandatory constructor
+        arguments are 'src' and 'dst'. This means that if any other parameters are not
+        passed via the constructor, they should be set accordingly before executing
+        the copy() method.
+
+        :param src: Source directory (external drive).
+        :param dst: Destination directory (network drive).
+        :param nas_id: The id number of the NASbox being copied to.
+        :param delivery_id: The id number of the delivery associated with the drive.
+        :param folder_mapping: The folder mapping definition (e.g. 'from folder_map import KISIK_TO_GEOBC' )
+        """
 
         self._src = ""
         self._dst = ""

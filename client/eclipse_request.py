@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 # user imports
 from client.entity.entity import Entity
+from eclipse_config import EclipseNetworkConfig
 from client.entity.entity_attrs import ENTITY_ATTR_MAP
 
 
@@ -22,7 +23,9 @@ class EclipseRequest:
 
     """EclipseRequest class. Prepares and handles send/recv of eclipse HTTP requests."""
 
-    _ENDPOINT = "/api/"
+    _PORT = str(EclipseNetworkConfig.Port.P_8000)
+    _HOST = EclipseNetworkConfig.Host.LOCALHOST
+    _ENDPOINT = "http://" + _HOST + ":" + _PORT + "/api/"
 
     def __init__(self, http_method: str, entity: Entity, url_params: Optional[dict] = None):
 
@@ -50,7 +53,10 @@ class EclipseRequest:
         self.http_method = http_method.upper()
         self.endpoint = self._ENDPOINT + entity.name + "/"
         self._valid_params = ENTITY_ATTR_MAP[entity.name]
-        self._url_params = url_params if self._is_valid_params(url_params) else None
+        if url_params and self._is_valid_params(url_params):
+            self._url_params = url_params
+        else:
+            self._url_params = None
 
     @property
     def data(self) -> str:
@@ -181,6 +187,9 @@ class EclipseRequest:
         for the Object's endpoint. If endpoint does not support the input params,
         the method will return False.
         """
+
+        if not params:
+            return False
 
         params_in = set(params.keys())
         params_valid = set(self._valid_params)
