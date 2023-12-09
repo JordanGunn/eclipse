@@ -16,7 +16,7 @@ from folder_map import FolderMapDefinition, FolderMapKey
 class EclipseCopy:
 
     def __init__(
-            self, src: Optional[str] = None, dst: Optional[str] = None, nas_id: Optional[int] = -1,
+            self, src: str, dst: str, nas_id: Optional[int] = -1,
             delivery_id: Optional[int] = -1, folder_mapping: Optional[FolderMapDefinition] = None
     ):
 
@@ -31,11 +31,9 @@ class EclipseCopy:
         self._delivery = None
         self._folder_mapping = folder_mapping
 
-        # Call property setters if actual values passed
-        if src:
-            self.src = src
-        if dst:
-            self.dst = dst
+        # Call property setters for actual values passed
+        self.src = src
+        self.dst = dst
         if nas_id > 0:
             self.nas_id = nas_id
         if delivery_id > 0:

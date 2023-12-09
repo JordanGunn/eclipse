@@ -1,4 +1,5 @@
 from client.entity import Drive
+from client.copy import EclipseCopy
 from eclipse_request import EclipseRequest
 
 
@@ -8,6 +9,10 @@ def main():
 
     ereq = EclipseRequest("POST", drv, url_params=None)
     ereq.send()
+
+    ecopy = EclipseCopy("src", "dst")
+    ecopy.nas_id = 1
+    ecopy.delivery_id = 1
 
 
 if __name__ == "__main__":
