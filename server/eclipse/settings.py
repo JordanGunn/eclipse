@@ -14,8 +14,8 @@ import os
 from pathlib import Path
 
 if os.name == 'nt':
-    os.environ['PATH'] = os.path.join('D:\\Archive\\work\\GeoBC_venv\\Lib\\site-packages\\osgeo') + ';' + os.environ['PATH']
-    os.environ['PROJ_LIB'] = os.path.join('D:\\Archive\\work\\GeoBC_venv\\Lib\\site-packages\\osgeo\\data\\proj') + ';' + os.environ['PATH']
+    os.environ['PATH'] = os.path.join('C:\\GeoBC\\GeoBC_venv\\Lib\\site-packages\\osgeo') + ';' + os.environ['PATH']
+    os.environ['PROJ_LIB'] = os.path.join('C:\\GeoBC\\GeoBC_venv\\Lib\\site-packages\\osgeo\\data\\proj') + ';' + os.environ['PATH']
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

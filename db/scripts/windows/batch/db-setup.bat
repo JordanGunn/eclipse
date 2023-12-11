@@ -13,11 +13,11 @@ set PGPASSWORD=%PASSWORD%
 REM Params (Change as needed)
 set DB=eclipse
 set EPSG_ALBERS_CSRS=3005
-set DIR_SCRIPT_DATA=../data
+set DIR_SCRIPT_DATA=../../data
 set DIR_VECTOR_DATA=C:/GeoBC/vectors
 
 REM Relative paths to SQL scripts
-set PATH_SQL_SCRIPTS=..\..
+set PATH_SQL_SCRIPTS=..\..\..
 set SCRIPT_ROLES=%PATH_SQL_SCRIPTS%\%DB%_roles.sql
 set SCRIPT_SCHEMA=%PATH_SQL_SCRIPTS%\%DB%_schema.sql
 set SCRIPT_REFTABLE=%PATH_SQL_SCRIPTS%/%DB%_reftables.sql
