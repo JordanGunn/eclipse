@@ -10,10 +10,15 @@ from tkinter.filedialog import askdirectory
 
 # user imports
 from .error import *
-from client.eclipse_config import NetworkConfig
-from client.eclipse_request import EclipseRequest
-from client.entity import Nasbox, SensorData, Drive
 from .folder_map import FolderMapDefinition, FolderMapKey
+try:
+    from client.eclipse_config import NetworkConfig
+    from client.eclipse_request import EclipseRequest
+    from client.entity import Nasbox, SensorData, Drive
+except ImportError:
+    from eclipse_config import NetworkConfig
+    from eclipse_request import EclipseRequest
+    from entity import Nasbox, SensorData, Drive
 
 
 class EclipseCopy:

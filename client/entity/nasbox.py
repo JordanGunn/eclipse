@@ -5,7 +5,10 @@ from typing import Union
 
 from .entity import Entity
 from .entity_attrs import EntityName
-from client.eclipse_config import NativeOS
+try:
+    from client.eclipse_config import NativeOS
+except ImportError:
+    from eclipse_config import NativeOS
 
 
 class Nasbox(Entity):

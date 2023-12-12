@@ -5,9 +5,13 @@ from typing import Union, Optional
 from urllib.parse import urljoin
 
 # user imports
-from client.entity.entity import Entity
 from eclipse_config import NetworkConfig
-from client.entity.entity_attrs import ENTITY_ATTR_MAP
+try:
+    from client.entity.entity import Entity
+    from client.entity.entity_attrs import ENTITY_ATTR_MAP
+except ImportError:
+    from entity.entity import Entity
+    from entity.entity_attrs import ENTITY_ATTR_MAP
 
 
 class _EclipseHttpMethod:
