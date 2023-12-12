@@ -5,6 +5,7 @@ class NASBox(models.Model):
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=20)
+    drive_letter = models.CharField(max_length=1)
     location = models.CharField(max_length=255)
     ipv4_addr = models.CharField(max_length=15)
 

@@ -35,6 +35,6 @@ INSERT INTO Epoch (epoch_year, description, epsg_code) VALUES
 
 -- Populate the NASbox table for demonstration (Optional)
 INSERT INTO NASbox (name, location, IPv4_addr) VALUES
-  ('Vader', 'Koraleys Cubicle', '142.36.252.188'),
-  ('Revan', 'Scanning Room (Basement)', '127.0.0.1');
+  ('Vader', 'N', 'Koraleys Cubicle', '142.36.252.188'),
+  ('Revan', 'A','Scanning Room (Basement)', '127.0.0.1');
 --
