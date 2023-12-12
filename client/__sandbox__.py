@@ -27,7 +27,7 @@ def main():
     port = NetworkConfig.PORT.DEFAULT
     ipv4_addr = nas_tgt["ipv4_addr"]
 
-    ecopy.set_network_info(port=port, ipv4_addr=ipv4_addr)
+    ecopy.set_network_info(port=port, nas_location=ipv4_addr)
     ecopy.copy()
 
 

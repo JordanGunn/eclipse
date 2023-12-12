@@ -57,6 +57,7 @@ class EclipseCopy:
         self._dst_dir = ""
         self._copy_dst = ""
         self._ipv4_addr = ""
+        self._drive_letter = ""
         self._network_path = ""
 
         # int attributes
@@ -148,6 +149,33 @@ class EclipseCopy:
                 self._network_path, self._dst_dir
             )
 
+    @property
+    def drive_letter(self) -> str:
+
+        """Getter for the EclipseCopy dst property (copy destination)."""
+
+        return self._drive_letter
+
+    @drive_letter.setter
+    def drive_letter(self, drive_letter: str):
+
+        """
+        Setter for the EclipseCopy dst property (Copy Destination).
+
+        :param drive_letter: Mapped windows network drive.
+        :raises ValueError:
+        """
+
+        self._drive_letter = drive_letter.upper()
+        if not drive_letter.endswith(':'):
+            drive_letter += ':'
+
+        if not self.nasbox:
+            self.nasbox = Nasbox()
+
+        ipv4_addr = self.nasbox.windows_network_path_to_ip(drive_letter)
+        self.ipv4_addr = self.nasbox.ipv4_addr = ipv4_addr
+
     @staticmethod
     def is_valid_path(dst):
         try:
@@ -196,36 +224,39 @@ class EclipseCopy:
 
         return self._network_path
 
-    def set_network_info(self, port: Union[str, int] = "", ipv4_addr: str = ""):
+    def set_network_info(self, port: Union[str, int] = "", nas_location: str = ""):
 
         """
         Set and update network related properties.
 
         :param port: Port number.
-        :param ipv4_addr: IPv4 Address.
+        :param nas_location: IPv4 Address.
         :raises ConnectionError:
         :raises ValueError:
         """
 
-        if not self.is_ipv4_address(ipv4_addr):
-            raise ValueError(f"Invalid IPv4 Address: '{ipv4_addr}'")
+        if not self.is_ipv4_address(nas_location):
+            raise ValueError(f"Invalid IPv4 Address: '{nas_location}'")
 
-        if self._service_unavailable(ipv4_addr, port):
-            raise ConnectionError(f"Service at '{self._network_path_(port, ipv4_addr)}' is invalid or unavailable.")
+        if self._service_unavailable(nas_location, port):
+            raise ConnectionError(f"Service at '{self._network_path_(port, nas_location)}' is invalid or unavailable.")
+
+        if not self.nasbox:
+            self.nasbox = Nasbox()
 
         if port:
             self.port = port
 
-        if ipv4_addr:
-            self.ipv4_addr = ipv4_addr
+        if nas_location:
+            self.ipv4_addr = nas_location
 
         # if params weren't passed, use object properties
         _port = port if port else self.port
-        _ip = ipv4_addr if ipv4_addr else self.ipv4_addr
+        _nas_location = nas_location if nas_location else self.ipv4_addr
 
         # assign the properties.
         self.nasbox = Nasbox()
-        self.nasbox.set_ipv4_addr(_ip)
+        self.nasbox.set_ipv4_addr(_nas_location)
         self._network_path = self._network_path_(self.port, self.ipv4_addr)
         self._copy_dst = urljoin(self.network_path, self.dst_dir)
 
