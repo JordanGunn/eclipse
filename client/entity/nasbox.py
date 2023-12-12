@@ -18,6 +18,8 @@ class Nasbox(Entity):
     def __init__(self, nas_name: Optional[str] = "", location: Optional[str] = "", ipv4_addr: Optional[str] = "", capacity_gb: Optional[float] = ""):
         super().__init__()
         self.name = EntityName.NASBOX
+
+        self._mapped_drive = ""
         self.nas_name_ = nas_name if nas_name else ""
         self.location_ = location if location else ""
         self.ipv4_addr_ = ipv4_addr if ipv4_addr else ""
@@ -88,6 +90,7 @@ class Nasbox(Entity):
                 if not self._is_valid_windows_drive(nas_location):
                     raise ValueError(f"Invalid Windows network drive: {nas_location}")
                 # IP addr from windows network path
+                self._mapped_drive = nas_location
                 self.ipv4_addr = self.windows_network_path_to_ip(nas_location)
             elif native_os in [LINUX_OS, LINUX2_OS]:
                 # IP addr from unix network path
@@ -97,7 +100,7 @@ class Nasbox(Entity):
                 raise ValueError("Unsupported Operating System.")
 
     @staticmethod
-    def _is_valid_windows_drive(drive_str):
+    def _is_valid_windows_drive(drive_str: str):
         """
         Validate if the string is a correctly formatted Windows drive path.
         """

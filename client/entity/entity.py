@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 
 class Entity(object):
@@ -15,9 +16,9 @@ class Entity(object):
     def name(self, name: str):
         self._name = name
 
-    def serialize(self) -> str:
+    def serialize(self, as_dict=False) -> Union[str, dict]:
         """
         Serialize the object to a JSON-formatted string.
         """
         data = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
-        return json.dumps(data, indent=4)
+        return data if as_dict else json.dumps(data, indent=4)

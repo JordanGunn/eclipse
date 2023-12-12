@@ -1,13 +1,16 @@
 # system imports
 import os
 import shutil
-import subprocess
+import socket
 from glob import glob
-from typing import Optional
+from pathlib import Path
+from urllib.parse import urljoin
+from typing import Optional, Union
 from tkinter.filedialog import askdirectory
 
 # user imports
-from client.eclipse_config import IS_LINUX
+from .error import *
+from client.eclipse_config import NetworkConfig
 from client.eclipse_request import EclipseRequest
 from client.entity import Nasbox, SensorData, Drive
 from .folder_map import FolderMapDefinition, FolderMapKey
@@ -16,8 +19,8 @@ from .folder_map import FolderMapDefinition, FolderMapKey
 class EclipseCopy:
 
     def __init__(
-            self, src: str, dst: str, nas_id: Optional[int] = -1,
-            delivery_id: Optional[int] = -1, folder_mapping: Optional[FolderMapDefinition] = None
+            self, src_dir: str, dst_dir: str, nas_id: Optional[Union[int, str]] = -1,
+            delivery_id: Optional[Union[int, str]] = -1, folder_mapping: Optional[FolderMapDefinition] = None
     ):
 
         """
@@ -28,62 +31,203 @@ class EclipseCopy:
         passed via the constructor, they should be set accordingly before executing
         the copy() method.
 
-        :param src: Source directory (external drive).
-        :param dst: Destination directory (network drive).
+        :param src_dir: Source directory (external drive).
+        :param dst_dir: Destination directory (network drive).
         :param nas_id: The id number of the NASbox being copied to.
         :param delivery_id: The id number of the delivery associated with the drive.
         :param folder_mapping: The folder mapping definition (e.g. 'from folder_map import KISIK_TO_GEOBC' )
         """
 
-        self._src = ""
-        self._dst = ""
+        # handle typing of nas_id
+        if isinstance(nas_id, str):
+            if nas_id.isnumeric():
+                nas_id = int(nas_id)
+            else:
+                raise ValueError(f"Invalid 'nas_id': {nas_id}")
+
+        # handle typing of delivery_id
+        if isinstance(delivery_id, str):
+            if delivery_id.isnumeric():
+                delivery_id = int(delivery_id)
+            else:
+                raise ValueError(f"Invalid 'delivery_id': {delivery_id}")
+
+        # string attributes
+        self._src_dir = ""
+        self._dst_dir = ""
+        self._copy_dst = ""
+        self._ipv4_addr = ""
+        self._network_path = ""
+
+        # int attributes
+        self._port = -1
         self._nas_id = -1
         self._delivery_id = -1
+
+        # list attributes
         self._files = []
         self._records = []
+
+        # Entity attributes
         self._drive = None
         self._nasbox = None
-        self._delivery = None
+
+        # dict attributes
         self._folder_mapping = folder_mapping
 
         # Call property setters for actual values passed
-        self.src = src
-        self.dst = dst
+        self.src_dir = src_dir
+        self.dst_dir = dst_dir
         if nas_id > 0:
             self.nas_id = nas_id
         if delivery_id > 0:
             self.delivery_id = delivery_id
 
     @property
-    def src(self) -> str:
-        return self._src
+    def src_dir(self) -> str:
 
-    @src.setter
-    def src(self, src: str):
+        """Getter for the EclipseCopy src property (copy source)."""
+
+        return self._src_dir
+
+    @src_dir.setter
+    def src_dir(self, src: str):
+
+        """
+        Setter for the EclipseCopy src property
+
+        :param src: A valid drive path.
+        :raises ValueError:
+        """
 
         if not os.path.exists(src):
             raise ValueError(f"Path {src} does not exist.")
 
         else:  # set the src and update related properties.
-            self._src = src
+            self._src_dir = src
             self._drive = Drive()
             self._drive.set_drive_info(src)
             self._gather_files()
-            self._create_records()
 
     @property
-    def dst(self) -> str:
-        return self._dst
+    def ipv4_addr(self) -> str:
 
-    @dst.setter
-    def dst(self, dst: str):
-        if not os.path.exists(dst):
-            raise ValueError(f"Path {dst} does not exist.")
+        """Getter for EclipseCopy ip property."""
 
-        else:  # set the dst and update related properties.
-            self._dst = dst
-            self._nasbox = Nasbox()
-            self._nasbox.set_ipv4_addr(dst)
+        return self._ipv4_addr
+
+    @ipv4_addr.setter
+    def ipv4_addr(self, ipv4_addr: str):
+
+        if self.is_ipv4_address(ipv4_addr):
+            self._ipv4_addr = ipv4_addr
+            self._network_path = self._network_path_(self.port, self.ipv4_addr)
+        else:
+            raise ValueError(f"Invalid IPv4 Address: '{ipv4_addr}'")
+
+    @property
+    def dst_dir(self) -> str:
+
+        """Getter for the EclipseCopy dst property (copy destination)."""
+
+        return self._dst_dir
+
+    @dst_dir.setter
+    def dst_dir(self, dst: str):
+
+        """
+        Setter for the EclipseCopy dst property (Copy Destination).
+
+        :param dst: Copy Destination (IPv4 address or valid network path.)
+        :raises ValueError:
+        """
+
+        if self.is_valid_path(dst):
+            self._dst_dir = dst
+            self._copy_dst = urljoin(
+                self._network_path, self._dst_dir
+            )
+
+    @staticmethod
+    def is_valid_path(dst):
+        try:
+            Path(dst)
+            return True
+        except ValueError:
+            return False
+
+    @property
+    def port(self) -> int:
+
+        """Getter for the EclipseCopy port property."""
+
+        return self._port
+
+    @port.setter
+    def port(self, port: Union[str, int]):
+
+        """
+        Setter for the EclipseCopy port property.
+
+        :param port: Port number (string or integer)
+        :raises ValueError:
+        :raises WellKnownPortError:
+        """
+
+        # cast str port to and integer
+        if isinstance(port, str):
+            if not port.isnumeric():
+                raise ValueError(f"Invalid port number: '{port}'")
+            else:
+                port = int(port)
+
+        # make sure port number is not from well-know designated ports.
+        if self._is_wellknown_port(port):
+            raise WellKnownPortError(f"Port '{port}' is in well-known range [0~1023]")
+
+        # update the network path
+        self._port = port
+        self._network_path = self._network_path_(self.port, self.ipv4_addr)
+
+    @property
+    def network_path(self) -> str:
+
+        """Get the network_path property."""
+
+        return self._network_path
+
+    def set_network_info(self, port: Union[str, int] = "", ipv4_addr: str = ""):
+
+        """
+        Set and update network related properties.
+
+        :param port: Port number.
+        :param ipv4_addr: IPv4 Address.
+        :raises ConnectionError:
+        :raises ValueError:
+        """
+
+        if not self.is_ipv4_address(ipv4_addr):
+            raise ValueError(f"Invalid IPv4 Address: '{ipv4_addr}'")
+
+        if self._service_unavailable(ipv4_addr, port):
+            raise ConnectionError(f"Service at '{self._network_path_(port, ipv4_addr)}' is invalid or unavailable.")
+
+        if port:
+            self.port = port
+
+        if ipv4_addr:
+            self.ipv4_addr = ipv4_addr
+
+        # if params weren't passed, use object properties
+        _port = port if port else self.port
+        _ip = ipv4_addr if ipv4_addr else self.ipv4_addr
+
+        # assign the properties.
+        self.nasbox = Nasbox()
+        self.nasbox.set_ipv4_addr(_ip)
+        self._network_path = self._network_path_(self.port, self.ipv4_addr)
+        self._copy_dst = urljoin(self.network_path, self.dst_dir)
 
     @property
     def drive(self) -> Drive:
@@ -210,7 +354,25 @@ class EclipseCopy:
                 if record.delivery_id <= 0:
                     record.delivery_id = delivery_id
 
-    def copy(self) -> list:
+    def _post_records(self, file_errs: dict) -> Union[dict, None]:
+
+        """
+        Issue a POST request to the server for all the file records.
+
+        :param file_errs: A list of files that failed to copy.
+        :return:
+        """
+
+        file_records = [  # remove any files for record creation that failed to copy
+            f for f in self._files
+            if f not in file_errs["file"]
+        ]
+        records = self._create_records(file_records)
+        erq = EclipseRequest("POST", records)
+        res = erq.send()
+        return res
+
+    def copy(self) -> dict[str: list[str]]:
 
         """
         Copy from the delivered source folder structure and translate
@@ -220,35 +382,81 @@ class EclipseCopy:
         is defined by the folder tree delivered by the currently contracted
         company responsible for acquisition
 
-        :return: A list of files that failed to copy (if any.)
+        :return: None if successful, else a dictionary containing any failed file copy items (keys: ["file", "err"])
+        :raises MissingFkError:
+        :raises MissingNetworkConfigError:
         """
 
-        if not self.dst:
-            raise ValueError("The 'dst' property has not been set.")
+        if not self.dst_dir:
+            raise ValueError("The 'dst_dir' property has not been set.")
 
-        if self.nas_id <= 0:
-            raise CopyError.NoNasIdFkError
-        if self.delivery_id <= 0:
-            raise CopyError.NoDeliveryIdFkError
+        # throw exceptions if proper attributes are not set.
+        self._validate_copy()
 
-        failed_copy = []
+        # copy the files to the network location
+        failed_copy = {"file": [], "err": []}
+        for file in self._files:
+            try:
+                f_dir = os.path.dirname(file)
+                dst_dir = urljoin(self._copy_dst, f_dir)
+                os.makedirs(dst_dir, exist_ok=True)
+                shutil.copy2(file, dst_dir)
+
+            except Exception as err:
+                failed_copy["file"].append(file)
+                failed_copy["err"].append(err)
+
+        # Update the drive records.
         erq = EclipseRequest("POST", self._drive)
         res = erq.send()
         if not res:
             raise ConnectionError("Failed to post drive record to Eclipse database.")
-        for record, file in zip(self._records, self._files):
-            try:
-                f_dir = os.path.dirname(file)
-                dst_dir = os.path.join(self.dst, f_dir)
-                os.makedirs(dst_dir, exist_ok=True)
-                shutil.copy2(file, dst_dir)
-                erq = EclipseRequest("POST", record)
-                erq.send()
 
-            except Exception as e:
-                failed_copy.append((file, e))
+        # Update the file records
+        self._post_records(failed_copy)
 
         return failed_copy
+
+    def _validate_copy(self):
+
+        """
+        Run validation methods before continuing network-enabled copy.
+
+        :raises MissingFkError:
+        :raises MissingNetworkPropertiesError:
+        """
+
+        if not self._is_valid_foreign_keys(self.nas_id, self.delivery_id):
+            raise MissingFkError
+        if not self._is_valid_network_properties(self.port, self.ipv4_addr):
+            raise MissingNetworkPropertiesError
+
+    @staticmethod
+    def _is_valid_network_properties(port: Union[str, int], ipv4_addr: str) -> bool:
+
+        """Make sure port and ipv4_addr properties are not default or empty."""
+
+        if isinstance(port, str):
+            port = int(port)
+
+        return port > 0 and ipv4_addr
+
+    @staticmethod
+    def _is_wellknown_port(port: Union[str, int]) -> bool:
+
+        """Make assigned port number is not within well-known port range."""
+
+        if isinstance(port, str):
+            port = int(port)
+
+        return port <= NetworkConfig.PORT.FORBIDDEN.WellKnown.P_1023
+
+    @staticmethod
+    def _is_valid_foreign_keys(nas_id: int, delivery_id: int) -> bool:
+
+        """Make sure foreign keys are set properly and are note default values."""
+
+        return nas_id > 0 or delivery_id > 0
 
     def _gather_files(self):
 
@@ -264,14 +472,14 @@ class EclipseCopy:
         fmap = self.folder_mapping
         if fmap:
             src_files = []
-            for folder in fmap:
+            for folder in fmap.keys():
 
                 sources = fmap[folder][FolderMapKey.SOURCE_FOLDERS]
                 extensions = fmap[folder][FolderMapKey.FILE_EXTENSIONS]
 
                 for source in sources:  # Gather files with desired extensions
                     is_recursive = source.endswith("*")
-                    src_full = os.path.join(self._src, source)  # join the src root with current relative path
+                    src_full = os.path.join(self._src_dir, source)  # join the src root with current relative path
                     files = []
                     for ext in extensions:
                         files.extend(
@@ -283,7 +491,7 @@ class EclipseCopy:
             if src_files:  # If files found with extensions, copy them to the GeoBC folder mappings
                 self._files = src_files
 
-    def _create_records(self):
+    def _create_records(self, files: list[str]) -> list[SensorData]:
 
         """
         Copy from the delivered source folder structure and translate
@@ -295,99 +503,69 @@ class EclipseCopy:
         """
 
         records = []
-        files = self._files
+
         if files:
             for f in files:
-                record = SensorData(f)
+                record = SensorData(file_path=f)
                 if self._nas_id > 0:
                     record.nas_id = self._nas_id
                 if self._delivery_id > 0:
                     record.delivery_id = self._delivery_id
                 records.append(record)
 
-        self._records = records
+        return records
 
     @staticmethod
-    def _linux_shell_copy(src, dst):
-        """
-        Perform recursive copy using Linux shell-command.
-
-        :param src: The source directory.
-        :param dst: The destination Directory.
-        """
-
-        if not src.endswith('/'):
-            src += '/'
-        if not dst.endswith('/'):
-            dst += '/'
-
-        # Construct the rsync command
-        cmd = ['rsync', '-a', '--include', '*/', '--exclude', '*', src, dst]
-
-        # Execute the command
-        subprocess.run(cmd, check=True)
+    def _network_path_(port: Union[str, int], ipv4_addr: str) -> str:
+        return f"http://{ipv4_addr}:{port}"
 
     @staticmethod
-    def _win_shell_copy(src, dst):
+    def _service_available(ipv4_addr: str, port: Union[str, int]) -> bool:
 
         """
-        Perform recursive copy using Windows shell-command.
+        Check if service is available for connection.
 
-        :param src: The source directory.
-        :param dst: The destination Directory.
+        Uses the ipv4 address and port number to verify
+        if a target service is available for connection.
+
+        :param ipv4_addr: IPv4 Address
+        :param port: Port number.
+        :return: True of False (bool)
         """
 
-        cmd = ['robocopy', src, dst, '/E', '/XF', '*']
+        if isinstance(port, str):
+            port = int(port)
 
-        # Execute the command
-        subprocess.run(cmd, check=True)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.connect((ipv4_addr, port))
+                return True
+            except socket.error:
+                return False
 
-    def _copy_folder_structure(self, src, dst) -> str:
+    def _service_unavailable(self, ipv4_addr: str, port: Union[str, int]) -> bool:
+
         """
-        Copies the folder structure from src to dst, excluding files.
-        :param src: The source directory path.
-        :param dst: The destination directory path.
-        :return: The copied destination folder
+        Check if service is unavailable for connection.
+
+        Wrapper for more verbose use of service_available method.
+
+        :param ipv4_addr: IPv4 Address
+        :param port: Port number.
+        :return: True of False (bool)
         """
+        if isinstance(port, str):
+            port = int(port)
 
-        # get the new copied destination
-        head, root = os.path.split(src)
-        dst_root = os.path.join(dst, root)
-        os.makedirs(dst_root, exist_ok=True)
-        self._linux_shell_copy(src, dst_root) \
-            if IS_LINUX \
-            else self._win_shell_copy(src, dst_root)
+        return not self._service_available(ipv4_addr, port)
 
-        return dst_root
-
-
-def lp_ftree_json(path: str):
-    """
-    Generates a JSON representation of the folder structure for the given path.
-    """
-    tree = {}
-    if os.path.isdir(path):
-        for item in os.listdir(path):
-            sub_path = os.path.join(path, item)
-            if os.path.isdir(sub_path):
-                tree[item] = lp_ftree_json(sub_path)
-    return tree
-
-
-class CopyError:
-    class NoDeliveryIdFkError(Exception):
-        """Exception indicating that a drive record is missing the delivery id foreign key."""
-
-        def __init__(self, message="Entity does not contain delivery_id foreign key attribute."):
-            self.message = message
-            super().__init__(self.message)
-
-    class NoNasIdFkError(Exception):
-        """Exception indicating that a drive record is missing the nas_id foreign key."""
-
-        def __init__(self, message="Entity does not contain nas_id foreign key attribute."):
-            self.message = message
-            super().__init__(self.message)
+    @staticmethod
+    def is_ipv4_address(addr: str) -> bool:
+        try:
+            socket.inet_aton(addr)
+            return True
+        except socket.error:
+            return False
 
 
 def main():
