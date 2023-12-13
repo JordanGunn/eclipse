@@ -1,30 +1,28 @@
 # system imports
 import os
 import shutil
-import socket
 from glob import glob
-from pathlib import Path
 from urllib.parse import urljoin
 from typing import Optional, Union
 from tkinter.filedialog import askdirectory
 
 # user imports
-from .error import *
+from client.eclipse_config import NativeOS
+from client.eclipse_request import EclipseRequest
+from client.entity import Nasbox, SensorData, Drive
 from .folder_map import FolderMapDefinition, FolderMapKey
-try:
-    from client.eclipse_config import NetworkConfig
-    from client.eclipse_request import EclipseRequest
-    from client.entity import Nasbox, SensorData, Drive
-except ImportError:
-    from eclipse_config import NetworkConfig
-    from eclipse_request import EclipseRequest
-    from entity import Nasbox, SensorData, Drive
+if NativeOS.IS_LINUX:
+    from client.entity import NasboxLinux as Nas
+elif NativeOS.IS_WINDOWS:
+    from client.entity import NasboxWindows as Nas
+else:
+    raise OSError("Unsupported Operating System.")
 
 
 class EclipseCopy:
 
     def __init__(
-            self, src_dir: str, dst_dir: str, nas_id: Optional[Union[int, str]] = -1,
+            self, src: str, dst: str, nas_id: Optional[Union[int, str]] = -1,
             delivery_id: Optional[Union[int, str]] = -1, folder_mapping: Optional[FolderMapDefinition] = None
     ):
 
@@ -36,8 +34,8 @@ class EclipseCopy:
         passed via the constructor, they should be set accordingly before executing
         the copy() method.
 
-        :param src_dir: Source directory (external drive).
-        :param dst_dir: Destination directory (network drive).
+        :param src: Source directory (external drive).
+        :param dst: Destination directory (network drive).
         :param nas_id: The id number of the NASbox being copied to.
         :param delivery_id: The id number of the delivery associated with the drive.
         :param folder_mapping: The folder mapping definition (e.g. 'from folder_map import KISIK_TO_GEOBC' )
@@ -58,15 +56,10 @@ class EclipseCopy:
                 raise ValueError(f"Invalid 'delivery_id': {delivery_id}")
 
         # string attributes
-        self._src_dir = ""
-        self._dst_dir = ""
-        self._copy_dst = ""
-        self._ipv4_addr = ""
-        self._drive_letter = ""
-        self._network_path = ""
+        self._src = ""
+        self._dst = ""
 
         # int attributes
-        self._port = -1
         self._nas_id = -1
         self._delivery_id = -1
 
@@ -82,22 +75,22 @@ class EclipseCopy:
         self._folder_mapping = folder_mapping
 
         # Call property setters for actual values passed
-        self.src_dir = src_dir
-        self.dst_dir = dst_dir
+        self.src = src
+        self.dst = dst
         if nas_id > 0:
             self.nas_id = nas_id
         if delivery_id > 0:
             self.delivery_id = delivery_id
 
     @property
-    def src_dir(self) -> str:
+    def src(self) -> str:
 
         """Getter for the EclipseCopy src property (copy source)."""
 
-        return self._src_dir
+        return self._src
 
-    @src_dir.setter
-    def src_dir(self, src: str):
+    @src.setter
+    def src(self, src: str):
 
         """
         Setter for the EclipseCopy src property
@@ -110,36 +103,20 @@ class EclipseCopy:
             raise ValueError(f"Path {src} does not exist.")
 
         else:  # set the src and update related properties.
-            self._src_dir = src
+            self._src = src
             self._drive = Drive()
             self._drive.set_drive_info(src)
             self._gather_files()
 
     @property
-    def ipv4_addr(self) -> str:
-
-        """Getter for EclipseCopy ip property."""
-
-        return self._ipv4_addr
-
-    @ipv4_addr.setter
-    def ipv4_addr(self, ipv4_addr: str):
-
-        if self.is_ipv4_address(ipv4_addr):
-            self._ipv4_addr = ipv4_addr
-            self._network_path = self._network_path_(self.port, self.ipv4_addr)
-        else:
-            raise ValueError(f"Invalid IPv4 Address: '{ipv4_addr}'")
-
-    @property
-    def dst_dir(self) -> str:
+    def dst(self) -> str:
 
         """Getter for the EclipseCopy dst property (copy destination)."""
 
-        return self._dst_dir
+        return self._dst
 
-    @dst_dir.setter
-    def dst_dir(self, dst: str):
+    @dst.setter
+    def dst(self, dst: str):
 
         """
         Setter for the EclipseCopy dst property (Copy Destination).
@@ -148,122 +125,12 @@ class EclipseCopy:
         :raises ValueError:
         """
 
-        if self.is_valid_path(dst):
-            self._dst_dir = dst
-            self._copy_dst = urljoin(
-                self._network_path, self._dst_dir
-            )
+        if self.nasbox and not self.nasbox.path:
+            self.nasbox.path = dst
+        else:
+            self.nasbox = Nasbox.create(dst)
 
-    @property
-    def drive_letter(self) -> str:
-
-        """Getter for the EclipseCopy dst property (copy destination)."""
-
-        return self._drive_letter
-
-    @drive_letter.setter
-    def drive_letter(self, drive_letter: str):
-
-        """
-        Setter for the EclipseCopy dst property (Copy Destination).
-
-        :param drive_letter: Mapped windows network drive.
-        :raises ValueError:
-        """
-
-        self._drive_letter = drive_letter.upper()
-        if not drive_letter.endswith(':'):
-            drive_letter += ':'
-
-        if not self.nasbox:
-            self.nasbox = Nasbox()
-
-        ipv4_addr = self.nasbox.windows_network_path_to_ip(drive_letter)
-        self.ipv4_addr = self.nasbox.ipv4_addr = ipv4_addr
-
-    @staticmethod
-    def is_valid_path(dst):
-        try:
-            Path(dst)
-            return True
-        except ValueError:
-            return False
-
-    @property
-    def port(self) -> int:
-
-        """Getter for the EclipseCopy port property."""
-
-        return self._port
-
-    @port.setter
-    def port(self, port: Union[str, int]):
-
-        """
-        Setter for the EclipseCopy port property.
-
-        :param port: Port number (string or integer)
-        :raises ValueError:
-        :raises WellKnownPortError:
-        """
-
-        # cast str port to and integer
-        if isinstance(port, str):
-            if not port.isnumeric():
-                raise ValueError(f"Invalid port number: '{port}'")
-            else:
-                port = int(port)
-
-        # make sure port number is not from well-know designated ports.
-        if self._is_wellknown_port(port):
-            raise WellKnownPortError(f"Port '{port}' is in well-known range [0~1023]")
-
-        # update the network path
-        self._port = port
-        self._network_path = self._network_path_(self.port, self.ipv4_addr)
-
-    @property
-    def network_path(self) -> str:
-
-        """Get the network_path property."""
-
-        return self._network_path
-
-    def set_network_info(self, port: Union[str, int] = "", nas_location: str = ""):
-
-        """
-        Set and update network related properties.
-
-        :param port: Port number.
-        :param nas_location: IPv4 Address.
-        :raises ConnectionError:
-        :raises ValueError:
-        """
-
-        if not self.is_ipv4_address(nas_location):
-            raise ValueError(f"Invalid IPv4 Address: '{nas_location}'")
-
-        if self._service_unavailable(nas_location, port):
-            raise ConnectionError(f"Service at '{self._network_path_(port, nas_location)}' is invalid or unavailable.")
-
-        if not self.nasbox:
-            self.nasbox = Nasbox()
-
-        if port:
-            self.port = port
-
-        if nas_location:
-            self.ipv4_addr = nas_location
-
-        # if params weren't passed, use object properties
-        _port = port if port else self.port
-        _nas_location = nas_location if nas_location else self.ipv4_addr
-
-        # assign the properties.
-        self.nasbox = Nasbox()
-        self.nasbox.set_ipv4_addr(_nas_location)
-        self._network_path = self._network_path_(self.port, self.ipv4_addr)
-        self._copy_dst = urljoin(self.network_path, self.dst_dir)
+        self.dst = self.nasbox.path
 
     @property
     def drive(self) -> Drive:
@@ -294,14 +161,14 @@ class EclipseCopy:
         self._folder_mapping = folder_mapping
 
     @property
-    def nasbox(self) -> Nasbox:
+    def nasbox(self) -> Nas:
 
         """Get the nasbox property."""
 
         return self._nasbox
 
     @nasbox.setter
-    def nasbox(self, nasbox: Nasbox):
+    def nasbox(self, nasbox: Nas):
 
         """Set the nasbox property."""
 
@@ -423,18 +290,19 @@ class EclipseCopy:
         :raises MissingNetworkConfigError:
         """
 
-        if not self.dst_dir:
+        if not self.dst:
             raise ValueError("The 'dst_dir' property has not been set.")
 
         # throw exceptions if proper attributes are not set.
-        self._validate_copy()
+        if not self._is_valid_foreign_keys(self.nas_id, self.delivery_id):
+            raise MissingFkError
 
         # copy the files to the network location
         failed_copy = {"file": [], "err": []}
         for file in self._files:
             try:
                 f_dir = os.path.dirname(file)
-                dst_dir = urljoin(self._copy_dst, f_dir)
+                dst_dir = urljoin(self.dst, f_dir)
                 os.makedirs(dst_dir, exist_ok=True)
                 shutil.copy2(file, dst_dir)
 
@@ -452,40 +320,6 @@ class EclipseCopy:
         self._post_records(failed_copy)
 
         return failed_copy
-
-    def _validate_copy(self):
-
-        """
-        Run validation methods before continuing network-enabled copy.
-
-        :raises MissingFkError:
-        :raises MissingNetworkPropertiesError:
-        """
-
-        if not self._is_valid_foreign_keys(self.nas_id, self.delivery_id):
-            raise MissingFkError
-        if not self._is_valid_network_properties(self.port, self.ipv4_addr):
-            raise MissingNetworkPropertiesError
-
-    @staticmethod
-    def _is_valid_network_properties(port: Union[str, int], ipv4_addr: str) -> bool:
-
-        """Make sure port and ipv4_addr properties are not default or empty."""
-
-        if isinstance(port, str):
-            port = int(port)
-
-        return port > 0 and ipv4_addr
-
-    @staticmethod
-    def _is_wellknown_port(port: Union[str, int]) -> bool:
-
-        """Make assigned port number is not within well-known port range."""
-
-        if isinstance(port, str):
-            port = int(port)
-
-        return port <= NetworkConfig.PORT.FORBIDDEN.WellKnown.P_1023
 
     @staticmethod
     def _is_valid_foreign_keys(nas_id: int, delivery_id: int) -> bool:
@@ -515,7 +349,7 @@ class EclipseCopy:
 
                 for source in sources:  # Gather files with desired extensions
                     is_recursive = source.endswith("*")
-                    src_full = os.path.join(self._src_dir, source)  # join the src root with current relative path
+                    src_full = os.path.join(self._src, source)  # join the src root with current relative path
                     files = []
                     for ext in extensions:
                         files.extend(
@@ -551,57 +385,13 @@ class EclipseCopy:
 
         return records
 
-    @staticmethod
-    def _network_path_(port: Union[str, int], ipv4_addr: str) -> str:
-        return f"http://{ipv4_addr}:{port}"
 
-    @staticmethod
-    def _service_available(ipv4_addr: str, port: Union[str, int]) -> bool:
+class MissingFkError(Exception):
+    """Exception indicating that EclipseCopy is missing the delivery id foreign key."""
 
-        """
-        Check if service is available for connection.
-
-        Uses the ipv4 address and port number to verify
-        if a target service is available for connection.
-
-        :param ipv4_addr: IPv4 Address
-        :param port: Port number.
-        :return: True of False (bool)
-        """
-
-        if isinstance(port, str):
-            port = int(port)
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.connect((ipv4_addr, port))
-                return True
-            except socket.error:
-                return False
-
-    def _service_unavailable(self, ipv4_addr: str, port: Union[str, int]) -> bool:
-
-        """
-        Check if service is unavailable for connection.
-
-        Wrapper for more verbose use of service_available method.
-
-        :param ipv4_addr: IPv4 Address
-        :param port: Port number.
-        :return: True of False (bool)
-        """
-        if isinstance(port, str):
-            port = int(port)
-
-        return not self._service_available(ipv4_addr, port)
-
-    @staticmethod
-    def is_ipv4_address(addr: str) -> bool:
-        try:
-            socket.inet_aton(addr)
-            return True
-        except socket.error:
-            return False
+    def __init__(self, message="Missing foreign keys: Make sure 'delivery_id' and 'nas_id' are set correctly."):
+        self.message = message
+        super().__init__(self.message)
 
 
 def main():
