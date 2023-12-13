@@ -8,28 +8,28 @@ from .entity_attrs import EntityName
 from client.eclipse_config import NativeOS
 
 
-class Nasbox(Entity):
+class Nasbox:
 
     @staticmethod
-    def create(*args, **kwargs) -> '_Nasbox':
+    def create(path: str) -> '_Nasbox':
 
         """Create Nasbox subclass based on native operating system."""
 
-        if NativeOS.IS_UNSUPPORTED_OS:
-            raise ValueError(f"Unsupported Operating System: '{NativeOS.OS}'")
         if NativeOS.IS_WINDOWS:
-            return NasboxWindows(*args, **kwargs)
+            return NasboxWindows(path)
         if NativeOS.IS_LINUX:
-            return NasboxLinux(*args, **kwargs)
+            return NasboxLinux(path)
+        else:
+            raise OSError("Unsupported Operating System.")
 
 
 class _Nasbox(Entity):
 
-    def __init__(self):
+    def __init__(self, path: str = ""):
         super().__init__()
         self.name = EntityName.NASBOX
 
-        self._path = ""
+        self._path = path
         self._nas_name = ""
         self._location = ""
         self._ipv4_addr = ""
@@ -37,12 +37,7 @@ class _Nasbox(Entity):
 
     @property
     def path(self) -> str:
-        return self._nas_name
-
-    @path.setter
-    def path(self, path: str):
-        """Abstract Method for setting various network paths."""
-        pass
+        return self._path
 
     @property
     def nas_name(self) -> str:
@@ -93,7 +88,7 @@ class NasboxLinux(_Nasbox):
     REGEX_NETWORK_PATH = r'^\d{1,3}(\.\d{1,3}){3}:/.*'
 
     def __init__(self, path: str = ""):
-        super().__init__()
+        super().__init__(path)
 
         self._mount_path = ""
         self._network_path = ""
@@ -165,7 +160,7 @@ class NasboxLinux(_Nasbox):
         match = re.match(r"([^:/]+)", network_path)
 
         # Resolve the hostname to an IP address
-        self.network_path = network_path
+        self._network_path = network_path
         network_address = match.group(1)
         self.ipv4_addr = \
             self._ip_from_network_path(network_address)
@@ -257,15 +252,15 @@ class NasboxWindows(_Nasbox):
     # Pattern for UNC path with IPv4: '\\192.168.1.1\share'
     REGEX_UNC_PATH = r"^\\\\(\d{1,3}\.){3}\d{1,3}\\[\w.-]+"
 
-    # Pattern for Drive Path: 'C:\\'
+    # Pattern for Drive Path: 'N:\\'
     REGEX_DRIVE_PATH = r"[a-zA-Z]:\\"
 
     def __init__(self, path: str = ""):
-        super().__init__()
+        super().__init__(path)
 
-        self._drive_letter = ""
-        self._drive_path = ""
         self._unc_path = ""
+        self._drive_path = ""
+        self._drive_letter = ""
 
         if path:
             self.path = path
