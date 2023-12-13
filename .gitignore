@@ -10,7 +10,6 @@
 *.log
 *.gpkg
 *.csv
-*.pdf
 *.json
 **/test_files
 **/__pycache__

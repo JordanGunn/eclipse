@@ -141,12 +141,12 @@ class NasboxWindows(_Nasbox):
         return self._network_path
 
     @network_path.setter
-    def network_path(self, network_path: str):
-        if self.is_unc_path(network_path):
-            self._network_path = network_path
-            self._ipv4_addr = self.unc_path_to_ip(network_path)
+    def network_path(self, unc_path: str):
+        if self.is_unc_path(unc_path):
+            self._network_path = unc_path
+            self._ipv4_addr = self.unc_path_to_ip(unc_path)
         else:
-            raise ValueError(f"Invalid UNC path: '{network_path}'")
+            raise ValueError(f"Invalid UNC path: '{unc_path}'")
 
     @property
     def drive_letter(self):
