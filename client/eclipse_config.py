@@ -82,13 +82,14 @@ class SupportedOS:
     LINUX = "linux"
     LINUX2 = "linux2"
     WINDOWS = "windows"
+    WIN32 = 'win32'
     LIST = [LINUX, LINUX2, WINDOWS]
 
 
 class NativeOS:
     OS = sys.platform.lower()
     IS_UNSUPPORTED_OS = (OS not in SupportedOS.LIST)
-    IS_WINDOWS = (OS == SupportedOS.WINDOWS)
+    IS_WINDOWS = (OS == SupportedOS.WINDOWS or SupportedOS.WIN32) 
     IS_LINUX = (OS == SupportedOS.LINUX) or (sys.platform == SupportedOS.LINUX2)
     SHELL_EXEC = "/usr/bin/zsh" if IS_LINUX else None
 # ------------------------------------
