@@ -3,16 +3,18 @@
 # Written by Sam May
 # ------------------------------------------------------------------------------
 
+# system imports
 from tkinter import *
 from tkinter import ttk, filedialog, messagebox
 from tkcalendar import Calendar
 from multiprocessing import freeze_support
-import eclipse_config
-
 import os
 import base64
 import sys
 
+# user imports
+import eclipse_config
+import eclipse_bridge
 
 class ECLIPSE_GUI:
 
@@ -45,7 +47,7 @@ class ECLIPSE_GUI:
 
     def set_icon(self, frame):
 
-        if not eclipse_config.IS_LINUX:
+        if not eclipse_config.NativeOS.IS_LINUX:
             icon_data = base64.b64decode(eclipse_config.BC_LOGO_B64)
             icon_path = os.path.join(os.getcwd(), "bc.ico")
 
@@ -97,7 +99,6 @@ class ECLIPSE_GUI:
         self.set_icon(popup)
         popup.title("Delivery")
         popup.grab_set()
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Receiver Name - Name of the GeoBC staff member
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,7 +120,7 @@ class ECLIPSE_GUI:
         dateFrame.grid(row=1, column=0, padx=10, pady=5, sticky=W)
         ttk.Label(dateFrame, text="Date received").grid(row=0, column=0, padx=5, sticky=W)
         
-        calendar = Calendar(dateFrame, selectmode = 'day')
+        calendar = Calendar(dateFrame, selectmode = 'day', date_pattern = 'yyyy-mm-dd')
         calendar.grid(row=1, column=0, padx=5, pady=(0,5))
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,7 +130,6 @@ class ECLIPSE_GUI:
         commentFrame.grid(row=2, column=0, padx=10, pady=5, sticky=W)
         ttk.Label(commentFrame, text="Comments").grid(row=0, column=0, padx=5, sticky=W)
 
-        
         commentEntry = StringVar()
         ttk.Entry(
             commentFrame,
@@ -142,15 +142,15 @@ class ECLIPSE_GUI:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         submitFrame = ttk.Frame(popup)
         submitFrame.grid(row=3, column=0, padx=10, pady=5)
+        submitClicked = IntVar()
 
         ttk.Button(
             submitFrame,
             text="Submit",
-            command=lambda: self.deliveryValidation(receiverEntry, calendar, commentEntry)
+            command=lambda: self.deliveryValidation(receiverEntry, calendar, commentEntry, popup)
         ).grid(row=0, column=0)
-
-
-    def deliveryValidation(self, receiverEntry, calendar, commentEntry):
+            
+    def deliveryValidation(self, receiverEntry, calendar, commentEntry, popup):
         receiverName = receiverEntry.get()
         dateReceived = calendar.get_date()
         comments = commentEntry.get()
@@ -171,16 +171,18 @@ class ECLIPSE_GUI:
                     break
             if isWhiteSpace:
                 raise ValueError("Invalid receiver name! Please provide a valid receiver name.")
+            
+            eclipse_bridge.delivery(receiverName, dateReceived, comments)
 
         except ValueError as inputError:
             messagebox.showerror(
                 "Input Error", 
                 str(inputError)
                 )
+            self.open_popup_on_top_of_other_windows(popup)
             return
         
-
-        print(f'receiverName: {receiverName}\ndateReceived: {dateReceived}\ncomments: {comments}')
+        popup.destroy()
 
         
     def path_select(self, pathSV):
