@@ -193,13 +193,12 @@ class EclipseRequest:
         :param data: A valid url query params dictionary.
         :return:
         """
-
-        url = urljoin(self._ENDPOINT, endpoint)
-        if isinstance(data, str):
-            data = json.loads(data)
-
-        res = requests.post(url, json=data)
-        return res.json()
+        for dataDict in data:
+            url = urljoin(self._ENDPOINT, endpoint)
+            if isinstance(dataDict, str):
+                dataDict = json.loads(dataDict)
+            res = requests.post(url, json=dataDict)
+            return res.json()
 
     def _is_valid_params(self, params: dict) -> bool:
 
