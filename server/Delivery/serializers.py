@@ -7,5 +7,5 @@ class DeliverySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Delivery
-        fields = ['receiver_name', 'comments', 'timestamp']
+        fields = ['receiver_name', 'comments', 'date']
         read_only_fields = ['timestamp']
