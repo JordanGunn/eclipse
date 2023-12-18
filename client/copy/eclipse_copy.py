@@ -7,14 +7,23 @@ from typing import Optional, Union
 from tkinter.filedialog import askdirectory
 
 # user imports
-from client.eclipse_config import NativeOS
-from client.eclipse_request import EclipseRequest
-from client.entity import Nasbox, SensorData, Drive
+try:
+    from client.eclipse_config import NativeOS
+    from client.eclipse_request import EclipseRequest
+    from client.entity import Nasbox, SensorData, Drive
+except ImportError:
+    from eclipse_config import NativeOS
+    from eclipse_request import EclipseRequest
+    from entity import Nasbox, SensorData, Drive
 from .folder_map import FolderMapDefinition, FolderMapKey
 if NativeOS.IS_LINUX:
     from client.entity import NasboxLinux as Nas
 elif NativeOS.IS_WINDOWS:
-    from client.entity import NasboxWindows as Nas
+    try:
+        from client.entity import NasboxWindows as Nas
+    except ImportError:
+        from entity import NasboxWindows as Nas
+
 else:
     raise OSError("Unsupported Operating System.")
 
