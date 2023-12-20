@@ -55,5 +55,5 @@ router.register(r'sensordata', SensorDataViewSet)
 router.register(r'trajectory', TrajectoryViewSet)
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('eclipse/api/', include(router.urls)),
 ]

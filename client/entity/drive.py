@@ -107,9 +107,9 @@ class Drive(Entity):
     @delivery_id.setter
     def delivery_id(self, delivery_id: Union[int, str]):
         if isinstance(delivery_id, int):
-            self.nas_id_ = delivery_id
+            self.delivery_id_ = delivery_id
         elif isinstance(delivery_id, str) and delivery_id.isnumeric():
-            self.nas_id_ = int(delivery_id)
+            self.delivery_id_ = int(delivery_id)
         else:
             raise ValueError(f"Invalid: '{delivery_id}'. Argument 'nas_id' must be an integer.")
 
@@ -134,8 +134,8 @@ class Drive(Entity):
             self.file_count = 0      # setter looks at drive path when passed an empty string.
             self.serial_number = ""  # setter looks at drive path when passed an empty string.
             usage = shutil.disk_usage(self.drive_path_)
-            self.storage_total_gb_ = usage.total / (1024 ** 3)
-            self.storage_used_gb_ = usage.used / (1024 ** 3)
+            self.storage_total_gb_ = round(usage.total / (1024 ** 3), 2)
+            self.storage_used_gb_ = round(usage.used / (1024 ** 3), 2)
 
     @property
     def file_count(self):
