@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export MNT_POINT="/mnt/nfs_client"
+export SERVER_DIR="/home/jordan/work/sandbox/shared_folder"
+
+export IP_ALL_INTERFACE="0.0.0.0"
+export IP_LOOPBACK="127.0.0.1"
+
+export IP_NFS_SERVER="${IP_LOOPBACK}"
+
+export NFS_ADDR="${IP_NFS_SERVER}":"${SERVER_DIR}"

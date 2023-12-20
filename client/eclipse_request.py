@@ -29,7 +29,7 @@ class EclipseRequest:
 
     _PORT = NetworkConfig.PORT.DEFAULT
     _HOST = NetworkConfig.HOST.DEFAULT
-    _ENDPOINT = f"http://{_HOST}:{str(_PORT)}/api/"
+    _ENDPOINT = f"http://{_HOST}:{str(_PORT)}/eclipse/api/"
 
     def __init__(self, http_method: str, entities: Union[Entity, list[Entity]], url_params: Optional[dict] = None):
 
@@ -78,7 +78,7 @@ class EclipseRequest:
             self._url_params = None
 
     @property
-    def data(self) -> str:
+    def data(self) -> list:
 
         """Get EclipseRequest 'data' property."""
 
@@ -138,7 +138,7 @@ class EclipseRequest:
         if isinstance(entities, Entity):
             self._entities = [entities]
         # make sure all entities are the same type
-        elif all(isinstance(entity, type(entities[0])) for entity in self.entities):
+        elif all(isinstance(entity, type(entities[0])) for entity in entities):
             self._entities = entities
         # if entities are not the same subtype, raise exception.
         else:
@@ -184,7 +184,7 @@ class EclipseRequest:
         res = requests.get(url, params=params)
         return res.json()
 
-    def _post(self, endpoint: str, data: Union[str, dict]) -> str:
+    def _post(self, endpoint: str, data: Union[list[str], list[dict]]) -> list:
 
         """
         Generic POST request handler.
@@ -194,12 +194,13 @@ class EclipseRequest:
         :return:
         """
 
+        ress = []
         url = urljoin(self._ENDPOINT, endpoint)
-        if isinstance(data, str):
-            data = json.loads(data)
+        for _data in data:
+            res = requests.post(url, json=_data)
+            ress.append(res.json())
 
-        res = requests.post(url, json=data)
-        return res.json()
+        return ress
 
     def _is_valid_params(self, params: dict) -> bool:
 

@@ -11,10 +11,12 @@ class EntityName:
     BCGS20K = "bcgs20k"
     UTM_ZONE = "utmzone"
     DELIVERY = "delivery"
-    LIDAR_RAW = "lidarraw"
     BCGS2500K = "bcgs2500k"
+    LIDAR_STRIP = "lidarraw"
+    TRAJECTORY = "trajectory"
+    SENSOR_DATA = "sensordata"
+    LIDAR_TILE = "lidarclassified"
     DERIVED_PRODUCT = "derivedproduct"
-    LIDAR_CLASSIFIED = "lidarclassified"
     PROCESSING_STATUS = "processingstatus"
     SPATIAL_REFERENCE = "spatialreference"
 
@@ -30,6 +32,8 @@ class EntityAttributes:
     ECLIPSE = None
     BCGS20K = None
     UTM_ZONE = None
+    TRAJECTORY = None
+    SENSOR_DATA = ("file_path", "file_name", "file_size", "delivery_id", "nas_id", "trajectory_id")
     DELIVERY = ("receiver_name", "comments", "timestamp")
     LIDAR_RAW = None
     BCGS2500K = None
@@ -49,12 +53,14 @@ ENTITY_ATTR_MAP = {
     EntityName.BCGS20K: EntityAttributes.BCGS20K,
     EntityName.UTM_ZONE: EntityAttributes.UTM_ZONE,
     EntityName.DELIVERY: EntityAttributes.DELIVERY,
-    EntityName.LIDAR_RAW: EntityAttributes.LIDAR_RAW,
+    EntityName.LIDAR_STRIP: EntityAttributes.LIDAR_RAW,
     EntityName.BCGS2500K: EntityAttributes.BCGS2500K,
     EntityName.DERIVED_PRODUCT: EntityAttributes.DERIVED_PRODUCT,
-    EntityName.LIDAR_CLASSIFIED: EntityAttributes.LIDAR_CLASSIFIED,
+    EntityName.LIDAR_TILE: EntityAttributes.LIDAR_CLASSIFIED,
     EntityName.PROCESSING_STATUS: EntityAttributes.PROCESSING_STATUS,
-    EntityName.SPATIAL_REFERENCE: EntityAttributes.SPATIAL_REFERENCE
+    EntityName.SPATIAL_REFERENCE: EntityAttributes.SPATIAL_REFERENCE,
+    EntityName.SENSOR_DATA: EntityAttributes.SENSOR_DATA,
+    EntityName.TRAJECTORY: EntityAttributes.TRAJECTORY
 }
 
 

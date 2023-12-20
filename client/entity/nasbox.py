@@ -30,9 +30,9 @@ class _Nasbox(Entity):
         self.name = EntityName.NASBOX
 
         self._path = path
-        self._nas_name = ""
-        self._location = ""
-        self._ipv4_addr = ""
+        self.nas_name_ = ""
+        self.location_ = ""
+        self.ipv4_addr_ = ""
         self.capacity_gb_ = float("nan")
 
     @property
@@ -41,31 +41,46 @@ class _Nasbox(Entity):
 
     @property
     def nas_name(self) -> str:
-        return self._nas_name
+        return self.nas_name_
 
     @nas_name.setter
     def nas_name(self, nas_name: str):
-        self._nas_name = nas_name
+        self.nas_name_ = nas_name
 
     @property
     def location(self) -> str:
-        return self._location
+        return self.location_
 
     @location.setter
     def location(self, location: str):
-        self._location = location
+        self.location_ = location
 
     @property
     def ipv4_addr(self) -> str:
-        return self._ipv4_addr
+        return self.ipv4_addr_
 
     @ipv4_addr.setter
     def ipv4_addr(self, ipv4_addr: str):
+        """
+        :param ipv4_addr:
+        :return:
+        """
+
+        if self.is_ipv4_addr(ipv4_addr):
+            self.ipv4_addr_ = ipv4_addr
+
+    @staticmethod
+    def is_ipv4_addr(ipv4_addr: str) -> bool:
+        """
+        :param ipv4_addr:
+        :return:
+        """
+
         try:  # Check if nas_location is a valid IPv4 address
             socket.inet_aton(ipv4_addr)
-            self._ipv4_addr = ipv4_addr
         except socket.error:  # not an IPv4 address, treat as network drive
-            self._ipv4_addr = ""
+            return False
+        return True
 
     @property
     def capacity_gb(self) -> float:
@@ -186,9 +201,10 @@ class NasboxLinux(_Nasbox):
 
         network_mounts = []
         for mount in mounts:
-            if mount.startswith('//'):
-                parts = mount.split()
-                network_path = parts[0]
+            parts = mount.split()
+            network_path = parts[0]
+            ipv4_addr = network_path.split(":")[0]
+            if self.is_ipv4_addr(ipv4_addr):
                 mount_point = parts[1]
                 network_mounts.append((network_path, mount_point))
 
@@ -224,7 +240,7 @@ class NasboxLinux(_Nasbox):
         mounts = self._get_mounts()
         for mount in mounts:
             # Check if the given path is a mount point
-            if path == mount[1] and mount[0].startswith('//'):
+            if path == mount[1]:
                 return True
 
         return False
@@ -238,7 +254,7 @@ class NasboxLinux(_Nasbox):
         """
 
         result = subprocess.run(['mount'], capture_output=True, text=True)
-        network_drives = re.findall(r'//(.*?) on (.*?) type', result.stdout)
+        network_drives = re.findall(r'(.*?) on (.*?) type', result.stdout)
 
         for ip, mount_point in network_drives:
             if mount_point == mount_path:

@@ -12,7 +12,7 @@ class SensorData(Entity):
 
     def __init__(self, nas_id: Optional[int] = -1, delivery_id: int = -1, file_path: Optional[str] = ""):
         super().__init__()
-        Entity.name = EntityName.NASBOX
+        Entity.name = EntityName.SENSOR_DATA
 
         self.nas_id_ = nas_id
         self.delivery_id_ = delivery_id

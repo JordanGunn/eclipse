@@ -130,7 +130,7 @@ class EclipseCopy:
         else:
             self.nasbox = Nasbox.create(dst)
 
-        self.dst = self.nasbox.path
+        self._dst = self.nasbox.path
 
     @property
     def drive(self) -> Drive:
@@ -248,13 +248,13 @@ class EclipseCopy:
         self._delivery_id = delivery_id
 
         # make sure to set the drive delivery_id if necessary
-        if self._drive and self._drive.delivery_id <= 0:
+        if self._drive and self.delivery_id > 0:
             self._drive.delivery_id = delivery_id
 
         if self._records:
             # update the delivery_id for the sensor data records
             for record in self._records:
-                if record.delivery_id <= 0:
+                if record.delivery_id > 0:
                     record.delivery_id = delivery_id
 
     def _post_records(self, file_errs: dict) -> Union[dict, None]:
@@ -275,7 +275,7 @@ class EclipseCopy:
         res = erq.send()
         return res
 
-    def copy(self) -> dict[str: list[str]]:
+    def copy(self, dst: str = "") -> dict[str: list[str]]:
 
         """
         Copy from the delivered source folder structure and translate
@@ -290,21 +290,25 @@ class EclipseCopy:
         :raises MissingNetworkConfigError:
         """
 
-        if not self.dst:
+        if not self.dst and not dst:
             raise ValueError("The 'dst_dir' property has not been set.")
 
         # throw exceptions if proper attributes are not set.
         if not self._is_valid_foreign_keys(self.nas_id, self.delivery_id):
             raise MissingFkError
 
+        if dst:  # option to overwrite destination by passing as argument.
+            self.dst = dst
+
         # copy the files to the network location
         failed_copy = {"file": [], "err": []}
         for file in self._files:
             try:
                 f_dir = os.path.dirname(file)
-                dst_dir = urljoin(self.dst, f_dir)
-                os.makedirs(dst_dir, exist_ok=True)
-                shutil.copy2(file, dst_dir)
+                f_dir = f_dir[1:] if f_dir.startswith(os.path.sep) else f_dir
+                dst = self._dst + os.path.sep + f_dir
+                os.makedirs(dst, exist_ok=True)
+                shutil.copy2(file, dst)
 
             except Exception as err:
                 failed_copy["file"].append(file)

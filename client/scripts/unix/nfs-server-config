@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# mnt point and shared nfs dir
+export MNT_POINT="/mnt/nfs_server"
+export SHARE_DIR="/home/jordan/work/sandbox/shared_folder"
+
+# useful IPv4 addresses
+export IP_ALL_INTERFACE="0.0.0.0"
+export IP_LOOPBACK="127.0.0.1"
+
+# default values
+export IP_USE="${IP_LOOPBACK}"
+export NFS_ADDR="${IP_USE}":"${SHARE_DIR}"
