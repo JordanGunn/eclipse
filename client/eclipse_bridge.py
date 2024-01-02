@@ -14,19 +14,26 @@ class delivery:
 
     def addDelivery(self):
 
-        if self.checkDuplicates() == True:
+        deliveryEntity = Delivery(self.receiver_name, self.date, self.comments)
+        if self.checkDuplicates(deliveryEntity) == True:
             raise ValueError('Delivery record already exists!')
         
-        deliveryEntity = Delivery(self.receiver_name, self.date, self.comments)
-        ereq = EclipseRequest("POST", deliveryEntity, url_params=None)
+        ereq = EclipseRequest("POST", deliveryEntity)
+        ereq.send()
+
+    def checkDuplicates(self, entity):
+        
+        ereq = EclipseRequest("GET", entity)
         res = ereq.send()
 
-    def checkDuplicates(self):
-        partialEntity = Delivery(self.receiver_name, self.date, self.comments, True)
-        ereq = EclipseRequest("GET", partialEntity, url_params=None)
-        res = ereq.send()
+        tempDict = {
+                'receiver_name': self.receiver_name, 
+                'date': self.date
+                    }
+        for resDict in res:
+            resFiltered = {k:v for k,v in resDict.items() if k not in 'comments'}
 
-        if res != []:
-            return True
+            if tempDict == resFiltered:
+                return True
         
     

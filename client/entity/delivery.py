@@ -4,39 +4,35 @@ from .entity_attrs import EntityName
 
 class Delivery(Entity):
 
-    def __init__(self, receiver_name_, date_, comments_, validation = False):
+    def __init__(self, receiver_name, date, comments):
         super().__init__()
         Entity.name = EntityName.DELIVERY
-
-        if validation == False:
-            self._receiver_name = receiver_name_
-            self._date = date_
-            self._comments = comments_
-        else:
-            self._receiver_name = receiver_name_
-            self._date = date_
+        self.receiver_name_ = receiver_name
+        self.date_ = date
+        self.comments_ = comments
+        
 
     @property
     def _receiver_name(self):
-        return self.receiver_name
+        return self.receiver_name_
 
     @property
     def _date(self):
-        return self.date
+        return self.date_
 
     @property
     def _comments(self):
-        return self.comments
+        return self.comments_
     
     @_receiver_name.setter
     def _receiver_name(self, receiver_name):
-        self.receiver_name = receiver_name
+        self.receiver_name_ = receiver_name
     
     @_date.setter
     def _date(self, date):
-        self.date = date
+        self.date_ = date
 
     @_comments.setter
     def _comments(self, comments):
-        self.comments = comments
+        self.comments_ = comments
 
